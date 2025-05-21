@@ -1,0 +1,8 @@
+#"Proyecto final segundo parcial:
+#"Voy a generar un programa en python usando tkinter para la administracion de permisos, vacaciones, o dias economicos que los trabajadores solicitan en un hospital, sin que sean descontados de su salario, utilizando una interfaz
+#"El programa va a consistir en el control de las asistencias totales 
+#"Pienso comenzar investigando como hacer la interfaz
+#"Luego, voy a determinar un cierto numero de trabajadores y voy a hacer el codigo en base a ese numero para darle un alto o que marque error si se ingresa un numero que no esta incluido en el sistema
+#"Voy a poner letreros que digan cosas como 'por favor ingresa tu numero de control' o 'porfavor ingresa tu puesto ' para tener los datos de entrada
+#"Voy a usar funciones como el if o for para determinar los dias de vacaiones y saber cuando un empledado respeta o no los periodos 
+#"
