@@ -9,6 +9,7 @@
 #voy a poner clases y un messagebox
 #para que funcione voy a agregar una base con los datos, porque ya vi que para que los ingresen manual no funciona
 #codigo
+#para la base de datos voy a definir un taple si no existe asistencia de algun trabajador para que si este 
 
 import tkinter as tk
 from tkinter import messagebox
@@ -21,3 +22,7 @@ class HospitalApp:
         self.root.title("Control de Asistencia - Hospital")
         self.create_widgets()
         self.create_db()
+
+def create_widgets(self):
+        self.name_label = tk.Label(self.root, text="Nombre del Trabajador:")
+        self.name_label.pack()
