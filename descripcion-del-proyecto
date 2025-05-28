@@ -26,3 +26,10 @@ class HospitalApp:
 def create_widgets(self):
         self.name_label = tk.Label(self.root, text="Nombre del Trabajador:")
         self.name_label.pack()
+
+self.name_entry = tk.Entry(self.root)
+        self.name_entry.pack()
+
+        self.turno_label = tk.Label(self.root, text="Turno (M/V/N):")
+        self.turno_label.pack()
+
