@@ -10,13 +10,13 @@
 #para que funcione voy a agregar una base con los datos, porque ya vi que para que los ingresen manual no funciona
 #codigo
 #para la base de datos voy a definir un taple si no existe asistencia de algun trabajador para que si este 
-
+#sin persistencia de datos json, porque no esta hecho para guardar datos 
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
 from datetime import datetime, timedelta
 
-class HospitalApp:
+class Hospitalregistro:
     def _init_(self, root):
         self.root = root
         self.root.title("Control de Asistencia - Hospital")
