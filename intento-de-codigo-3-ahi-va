@@ -1,0 +1,70 @@
+#este es mi tercer intento, porque ya le agregue botones para que si ingreses los daots, porque en el otro le faltaba entrada para datos
+#aun conservo el datetime
+#utilize una lista para poder agregar los trabajadores y ya funciona el registro
+#intento de codigo numero 3:
+
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+trabajadores = []
+def registrar_horario():
+    nombre = entry_nombre.get()
+    entrada_str = entry_entrada.get()
+    salida_str = entry_salida.get()
+    try:
+        entrada = datetime.strptime(entrada_str, "%H:%M")
+        salida = datetime.strptime(salida_str, "%H:%M")
+        hora_limite = datetime.strptime("07:20", "%H:%M")
+        if entrada > hora_limite:
+            estado = "Retardo"
+        else:
+            estado = "Puntual"
+        if entrada > datetime.strptime("08:00", "%H:%M"):
+            estado = "Falta"
+        trabajador = {
+            "Nombre": nombre,
+            "Turno": turno_var.get(),
+            "Domicilio": entry_domicilio.get(),
+            "Puesto": puesto_var.get(),
+            "Entrada": entrada_str,
+            "Salida": salida_str,
+            "Estado": estado
+        }
+        
+        trabajadores.append(trabajador)
+        messagebox.showinfo("Registrado", f"Horario registrado: {estado}")
+    except ValueError:
+        messagebox.showerror("Error", "Formato de hora inválido. Usa HH:MM")
+
+ventana = tk.Tk()
+ventana.title("Registro de Trabajadores")
+
+tk.Label(ventana, text="Nombre:").grid(row=0, column=0)
+entry_nombre = tk.Entry(ventana)
+entry_nombre.grid(row=0, column=1)
+
+tk.Label(ventana, text="Turno:").grid(row=1, column=0)
+turno_var = tk.StringVar()
+turno_var.set("Matutino")
+tk.OptionMenu(ventana, turno_var, "Matutino", "Vespertino", "Nocturno").grid(row=1, column=1)
+
+tk.Label(ventana, text="Domicilio:").grid(row=2, column=0)
+entry_domicilio = tk.Entry(ventana)
+entry_domicilio.grid(row=2, column=1)
+
+tk.Label(ventana, text="Puesto:").grid(row=3, column=0)
+puesto_var = tk.StringVar()
+puesto_var.set("Doctor")
+tk.OptionMenu(ventana, puesto_var, "Doctor", "Enfermero", "Cirujano").grid(row=3, column=1)
+
+tk.Label(ventana, text="Hora Entrada (HH:MM):").grid(row=4, column=0)
+entry_entrada = tk.Entry(ventana)
+entry_entrada.grid(row=4, column=1)
+
+tk.Label(ventana, text="Hora Salida (HH:MM):").grid(row=5, column=0)
+entry_salida = tk.Entry(ventana)
+entry_salida.grid(row=5, column=1)
+
+tk.Button(ventana, text="Registrar Horario", command=registrar_horario).grid(row=6, column=0, columnspan=2, pady=10)
+
+ventana.mainloop()
