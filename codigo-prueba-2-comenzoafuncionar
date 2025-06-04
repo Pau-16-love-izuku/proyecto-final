@@ -1,4 +1,5 @@
 #codigo de prueba 2: (descripcion e intento)
+#ya funciono pero le falta la entrada para agregar mas datos, y la parte que registra al trabajador aun no funciona bien :(
 
 import tkinter as tk
 from tkinter import messagebox, simpledialog
@@ -34,7 +35,7 @@ class Hospitalcontrol:
 
     def registrar_entrada(self):
         nombre = simpledialog.askstring("Entrada", "Nombre del trabajador:")
-        turno = simpledialog.askstring("Entrada", "Turno (M/V/N):").upper() if nombre else No
+        turno = simpledialog.askstring("Entrada", "Turno (M/V/N):").upper() if nombre else None
         if nombre and turno in ['M', 'V', 'N']:
             entrada = datetime.now()
             self.cursor.execute("INSERT INTO asistencia (nombre, turno, entrada) VALUES (?, ?, ?)",
