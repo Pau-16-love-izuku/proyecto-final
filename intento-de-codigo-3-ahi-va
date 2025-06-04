@@ -1,7 +1,8 @@
-#este es mi tercer intento, porque ya le agregue botones para que si ingreses los daots, porque en el otro le faltaba entrada para datos
-#aun conservo el datetime
+#este es mi tercer intento, porque ya le agregue botones para que si se puedan ingresar los datos por el trabajador, porque en el otro le faltaba entrada para datos
+#aun conservo el datetime, aunque aun no lo uso bien
 #utilize una lista para poder agregar los trabajadores y ya funciona el registro
 #intento de codigo numero 3:
+#la mayoria de los codigos los hago en code visual studio y ya los pongo aqui
 
 import tkinter as tk
 from tkinter import messagebox
@@ -64,7 +65,5 @@ entry_entrada.grid(row=4, column=1)
 tk.Label(ventana, text="Hora Salida (HH:MM):").grid(row=5, column=0)
 entry_salida = tk.Entry(ventana)
 entry_salida.grid(row=5, column=1)
-
 tk.Button(ventana, text="Registrar Horario", command=registrar_horario).grid(row=6, column=0, columnspan=2, pady=10)
-
 ventana.mainloop()
