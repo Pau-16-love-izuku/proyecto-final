@@ -11,6 +11,10 @@
 #codigo
 #para la base de datos voy a definir un taple si no existe asistencia de algun trabajador para que si este 
 #sin persistencia de datos json, porque no esta hecho para guardar datos 
+#agregare la funcion datetime para el codigo final porque si sirvio
+
+codigo de pruba 1:
+
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
@@ -32,4 +36,76 @@ self.name_entry = tk.Entry(self.root)
 
         self.turno_label = tk.Label(self.root, text="Turno (M/V/N):")
         self.turno_label.pack()
+
+ self.turno_entry = tk.Entry(self.root)
+        self.turno_entry.pack()
+
+        self.entrada_button = tk.Button(self.root, text="Registrar Entrada", command=self.registrar_entrada)
+        self.entrada_button.pack()
+
+        self.salida_button = tk.Button(self.root, text="Registrar Salida", command=self.registrar_salida)
+        self.salida_button.pack()
+
+        self.reporte_button = tk.Button(self.root, text="Generar Reporte", command=self.generar_reporte)
+        self.reporte_button.pack()
+
+    def create_db(self):
+        self.conn = sqlite3.connect('database.db')
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS asistencia (
+                                id INTEGER PRIMARY KEY,
+                                nombre TEXT,
+                                turno TEXT,
+                                entrada DATETIME,
+                                salida DATETIME)''')
+        self.conn.commit()
+
+    def registrar_entrada(self):
+        nombre = self.name_entry.get()
+        turno = self.turno_entry.get().upper()
+        if nombre and turno in ['M', 'V', 'N']:
+            entrada = datetime.now()
+            self.cursor.execute("INSERT INTO asistencia (nombre, turno, entrada) VALUES (?, ?, ?)",
+                                (nombre, turno, entrada))
+            self.conn.commit()
+            messagebox.showinfo("Éxito", f"Entrada registrada para {nombre} en turno {turno}.")
+        else:
+            messagebox.showerror("Error", "Por favor, ingrese un nombre y un turno válido.")
+
+    def registrar_salida(self):
+        nombre = self.name_entry.get()
+        if nombre:
+            salida = datetime.now()
+            self.cursor.execute("UPDATE asistencia SET salida = ? WHERE nombre = ? AND salida IS NULL",
+                                (salida, nombre))
+            self.conn.commit()
+            messagebox.showinfo("Éxito", f"Salida registrada para {nombre}.")
+        else:
+            messagebox.showerror("Error", "Por favor, ingrese un nombre.")
+
+    def generar_reporte(self):
+        self.cursor.execute("SELECT nombre, turno, entrada, salida FROM asistencia")
+        registros = self.cursor.fetchall()
+        reporte = "Reporte de Asistencia:\n\n"
+        for registro in registros:
+            nombre, turno, entrada, salida = registro
+            entrada = datetime.strptime(entrada, '%Y-%m-%d %H:%M:%S')
+            salida = datetime.strptime(salida, '%Y-%m-%d %H:%M:%S') if salida else None
+            horas_trabajadas = (salida - entrada).total_seconds() / 3600 if salida else 0
+            reporte += f"{nombre} - Turno {turno} - Entrada: {entrada.strftime('%H:%M:%S')} - Salida: {salida.strftime('%H:%M:%S') if salida else 'Pendiente'} - Horas: {horas_trabajadas:.2f}\n"
+        messagebox.showinfo("Reporte", reporte)
+
+if _name_ == "_main_":
+    root = tk.Tk()
+    app = HospitalApp(root)
+    root.mainloop()
+(
+    id INTEGER PRIMARY KEY,
+    nombre TEXT,
+    turno TEXT,
+    entrada DATETIME,
+    salida DATETIME
+);
+
+
 
