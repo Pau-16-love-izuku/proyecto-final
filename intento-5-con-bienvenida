@@ -2,3 +2,143 @@
 # en este intento, agregue una bienvenida al codigo para que se vea mas formal
 # le puse de nombre a mi hospital "osamu", porque es un nombre que me gusto
 #aun tengo la contraseña despues de la bienvenida, que es hospital por si no lo puse en el codigo anterior 
+
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+
+trabajadores = []
+intentos = 0
+def registrar_horario():
+    nombre = entry_nombre.get()
+    entrada_str = entry_entrada.get()
+    salida_str = entry_salida.get()
+    try:
+        entrada = datetime.strptime(entrada_str, "%I:%M %p")
+        salida = datetime.strptime(salida_str, "%I:%M %p")
+        hora_limite = datetime.strptime("7:20 AM", "%I:%M %p")
+
+        if entrada > datetime.strptime("8:00 AM", "%I:%M %p"):
+            estado = "Falta"
+        elif entrada > hora_limite:
+            estado = "Retardo"
+        else:
+            estado = "Puntual"
+
+        trabajador = {
+            "Nombre": nombre,
+            "Turno": turno_var.get(),
+            "Domicilio": entry_domicilio.get(),
+            "Puesto": puesto_var.get(),
+            "Área": area_var.get(),
+            "Entrada": entrada_str,
+            "Salida": salida_str,
+            "Estado": estado,
+            "CURP": entry_curp.get()
+        }
+
+        trabajadores.append(trabajador)
+        messagebox.showinfo("Registrado", f"Horario registrado: {estado}")
+        resumen = (
+            f"Nombre: {trabajador['Nombre']}, Turno: {trabajador['Turno']}, "
+            f"Puesto: {trabajador['Puesto']}, Área: {trabajador['Área']}, "
+            f"Entrada: {trabajador['Entrada']}, Salida: {trabajador['Salida']}, "
+            f"Estado: {trabajador['Estado']}, CURP: {trabajador['CURP']}\n"
+        )
+        text_area.insert(tk.END, resumen)
+
+    except ValueError:
+        messagebox.showerror("Error", "Formato de hora inválido. Usa AM/PM")
+
+def mostrar_menu():
+    login.destroy()
+    global ventana
+    ventana = tk.Tk()
+    ventana.title("Registro de Trabajadores")
+    ventana.config(bg="lightblue")
+
+    tk.Label(ventana, text="Nombre:").grid(row=0, column=0)
+    global entry_nombre
+    entry_nombre = tk.Entry(ventana)
+    entry_nombre.grid(row=0, column=1)
+
+    tk.Label(ventana, text="Turno:").grid(row=1, column=0)
+    global turno_var
+    turno_var = tk.StringVar()
+    turno_var.set("Matutino")
+    tk.OptionMenu(ventana, turno_var, "Matutino", "Vespertino", "Nocturno").grid(row=1, column=1)
+
+    tk.Label(ventana, text="Domicilio:").grid(row=2, column=0)
+    global entry_domicilio
+    entry_domicilio = tk.Entry(ventana)
+    entry_domicilio.grid(row=2, column=1)
+
+    tk.Label(ventana, text="Puesto:").grid(row=3, column=0)
+    global puesto_var
+    puesto_var = tk.StringVar()
+    puesto_var.set("Doctor")
+    tk.OptionMenu(ventana, puesto_var, "Doctor", "Enfermero", "Cirujano").grid(row=3, column=1)
+
+    tk.Label(ventana, text="Área:").grid(row=4, column=0)
+    global area_var
+    area_var = tk.StringVar()
+    area_var.set("Pediatría")
+    tk.OptionMenu(ventana, area_var, "Pediatría", "Quirófano", "Operaciones", "Camillas", "Enfermería").grid(row=4, column=1)
+
+    tk.Label(ventana, text="Hora Entrada (ej. 7:10 AM):").grid(row=5, column=0)
+    global entry_entrada
+    entry_entrada = tk.Entry(ventana)
+    entry_entrada.grid(row=5, column=1)
+
+    tk.Label(ventana, text="Hora Salida (ej. 3:00 PM):").grid(row=6, column=0)
+    global entry_salida
+    entry_salida = tk.Entry(ventana)
+    entry_salida.grid(row=6, column=1)
+
+    tk.Label(ventana, text="CURP:").grid(row=7, column=0)
+    global entry_curp
+    entry_curp = tk.Entry(ventana)
+    entry_curp.grid(row=7, column=1)
+
+    tk.Button(ventana, text="Registrar Horario", command=registrar_horario).grid(row=8, column=0, columnspan=2, pady=10)
+
+    global text_area
+    text_area = tk.Text(ventana, height=10, width=80)
+    text_area.grid(row=9, column=0, columnspan=2, padx=10, pady=10)
+
+def verificar_contrasena():
+    global intentos
+    contrasena = entry_contrasena.get()
+
+    if contrasena == "hospital":
+        mostrar_menu()
+    else:
+        intentos += 1
+        if intentos < 3:
+            messagebox.showerror("Error", "Contraseña incorrecta, inténtalo de nuevo")
+        else:
+            messagebox.showerror("Acceso denegado", "Vuelve a intentarlo más tarde")
+            login.destroy()
+
+def abrir_login():
+    bienvenida.destroy()
+    global login
+    login = tk.Tk()
+    login.title("verificacion de contrasena")
+    login.geometry("400x200")
+    login.config(bg="lightpink")
+
+    tk.Label(login, text="Ingresa la contraseña:").pack(pady=10)
+    global entry_contrasena
+    entry_contrasena = tk.Entry(login, show="*")
+    entry_contrasena.pack()
+    tk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=5)
+
+bienvenida = tk.Tk()
+bienvenida.title("Bienvenido al hospital Osamu, (mi crush despues de deku)")
+bienvenida.geometry("600x300")
+bienvenida.config(bg="lightblue")
+
+tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
+tk.Button(bienvenida, text="Presione para continuar", command=abrir_login).pack(pady=10)
+bienvenida.mainloop()
