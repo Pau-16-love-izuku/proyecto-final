@@ -90,11 +90,11 @@ def mostrar_menu():
 
     tk.Button(ventana, text="Registrar Horario", command=registrar_horario).grid(row=7, column=1, columnspan=2, pady=10)
 
-def verificar_contrasena():
+def verificar_contraseña():
     global intentos
-    contrasena = entry_contrasena.get()
+    contraseña = entry_contraseña.get()
 
-    if contrasena == "hospital":
+    if contraseña == "hospital":
         mostrar_menu()
     else:
         intentos += 1
@@ -107,8 +107,8 @@ def verificar_contrasena():
 login = tk.Tk()
 login.title("Login")
 tk.Label(login, text="Ingresa la contraseña:").pack(pady=10)
-entry_contrasena = tk.Entry(login, show="*")
-entry_contrasena.pack()
-tk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=5)
+entry_contraseña = tk.Entry(login, show="*")
+entry_contraseña.pack()
+tk.Button(login, text="Entrar", command=verificar_contraseña).pack(pady=5)
 
 login.mainloop()
