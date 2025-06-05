@@ -1,4 +1,114 @@
 #intento de codigo para el proyecto: 4
 # en este ya le agregue el dato de la curp 
 #agregue un boton que pide una contraseña para que el trabajador pueda registrarse, porque se me ocurrio
-#
+#aun conservo las funciones como try e if
+
+
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+trabajadores = []
+intentos = 0
+def registrar_horario():
+    nombre = entry_nombre.get()
+    entrada_str = entry_entrada.get()
+    salida_str = entry_salida.get()
+
+    try:
+        entrada = datetime.strptime(entrada_str, "%I:%M %p")
+        salida = datetime.strptime(salida_str, "%I:%M %p")
+        hora_limite = datetime.strptime("7:20 AM", "%I:%M %p")
+
+        if entrada > datetime.strptime("8:00 AM", "%I:%M %p"):
+            estado = "Falta"
+        elif entrada > hora_limite:
+            estado = "Retardo"
+        else:
+            estado = "Puntual"
+
+        trabajador = {
+            "Nombre": nombre,
+            "Turno": turno_var.get(),
+            "Domicilio": entry_domicilio.get(),
+            "Puesto": puesto_var.get(),
+            "Entrada": entrada_str,
+            "Salida": salida_str,
+            "Estado": estado, 
+            "CURP": entry_curp.get()
+        }
+
+        trabajadores.append(trabajador)
+        messagebox.showinfo("Registrado", f"Horario registrado: {estado}")
+
+    except ValueError:
+        messagebox.showerror("Error", "Formato de hora inválido. Usa HH:MM AM/PM")
+
+
+def mostrar_menu():
+    login.destroy()  
+
+    global ventana
+    ventana = tk.Tk()
+    ventana.title("Registro de Trabajadores")
+
+    tk.Label(ventana, text="Nombre:").grid(row=0, column=0)
+    global entry_nombre
+    entry_nombre = tk.Entry(ventana)
+    entry_nombre.grid(row=0, column=1)
+
+    tk.Label(ventana, text="Turno:").grid(row=1, column=0)
+    global turno_var
+    turno_var = tk.StringVar()
+    turno_var.set("Matutino")
+    tk.OptionMenu(ventana, turno_var, "Matutino", "Vespertino", "Nocturno").grid(row=1, column=1)
+
+    tk.Label(ventana, text="Domicilio:").grid(row=2, column=0)
+    global entry_domicilio
+    entry_domicilio = tk.Entry(ventana)
+    entry_domicilio.grid(row=2, column=1)
+
+    tk.Label(ventana, text="Puesto:").grid(row=3, column=0)
+    global puesto_var
+    puesto_var = tk.StringVar()
+    puesto_var.set("Doctor")
+    tk.OptionMenu(ventana, puesto_var, "Doctor", "Enfermero", "Cirujano").grid(row=3, column=1)
+
+    tk.Label(ventana, text="Hora Entrada (ej. 7:10 AM):").grid(row=4, column=0)
+    global entry_entrada
+    entry_entrada = tk.Entry(ventana)
+    entry_entrada.grid(row=4, column=1)
+
+    tk.Label(ventana, text="Hora Salida (ej. 3:00 PM):").grid(row=5, column=0)
+    global entry_salida
+    entry_salida = tk.Entry(ventana)
+    entry_salida.grid(row=5, column=1)
+    
+    tk.Label(ventana, text=" CURP:").grid(row=6, column=0)
+    global entry_curp
+    entry_curp = tk.Entry(ventana)
+    entry_curp.grid(row=6, column=1)
+
+    tk.Button(ventana, text="Registrar Horario", command=registrar_horario).grid(row=7, column=1, columnspan=2, pady=10)
+
+def verificar_contrasena():
+    global intentos
+    contrasena = entry_contrasena.get()
+
+    if contrasena == "hospital":
+        mostrar_menu()
+    else:
+        intentos += 1
+        if intentos < 3:
+            messagebox.showerror("Error", "Contraseña incorrecta, inténtalo de nuevo")
+        else:
+            messagebox.showerror("Acceso denegado", "Vuelve a intentarlo más tarde")
+            login.destroy()
+
+login = tk.Tk()
+login.title("Login")
+tk.Label(login, text="Ingresa la contraseña:").pack(pady=10)
+entry_contrasena = tk.Entry(login, show="*")
+entry_contrasena.pack()
+tk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=5)
+
+login.mainloop()
