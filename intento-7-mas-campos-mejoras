@@ -1,6 +1,6 @@
 #intento7:
-#agregue la contraseña para que se pueda ingresar facilmente al sistema
-#agregue mas campos como NSS o numero de telefono, los cuales definí para que, si el trabajador ingresa mas de los numeros programados, marque error cuando se quiera registrar
+#agregue la contraseña para que se pueda ingresar facilmente al sistema, porque antes solo yo sabia cual era la contraseña
+#agregue mas campos como NSS o numero de telefono, los cuales definí para que, si el trabajador ingresa mas de los numeros programados, marque error cuando se quiera registrar y no lo deje continuar hasta que ingrese la cantidad de numeros correcta
 
 import tkinter as tk
 from tkinter import messagebox
