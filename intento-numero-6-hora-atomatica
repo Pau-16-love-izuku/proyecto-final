@@ -1,4 +1,5 @@
 #decidi que es muy facil que un trabajador mienta respecto a su horario, asi que mejor lo cambie para que el codigo registre la hora de la computadora automaticamente, ya use mas el datetime
+#agregue un emoji de corazon en el nombre por estetica del codigo
 
 import tkinter as tk
 from tkinter import messagebox
@@ -35,7 +36,7 @@ def registrar_entrada():
     clave = (nombre, numero)
 
     if not nombre or not numero:
-        messagebox.showerror("Error", "Por favor, ingresa nombre y número de control.")
+        messagebox.showerror("Error", "Por favor, ingresa tu nombre y tu número de control.")
         return
 
     ahora = datetime.now()
@@ -85,7 +86,7 @@ def mostrar_menu():
     ventana.title("Registro de Trabajadores")
     ventana.config(bg="lightblue")
 
-    tk.Label(ventana, text="--- Registro Automático de Entrada/Salida ---", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+    tk.Label(ventana, text="Registro Automático de Entrada/Salida", font=("Times New Roman", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
 
     tk.Label(ventana, text="Nombre:").grid(row=1, column=0, sticky='e')
     global entry_nombre
@@ -141,7 +142,6 @@ bienvenida = tk.Tk()
 bienvenida.title("Bienvenido al hospital Osamu 💖")
 bienvenida.geometry("600x300")
 bienvenida.config(bg="lightblue")
-
 tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
 tk.Button(bienvenida, text="Presione para continuar", command=abrir_login).pack(pady=10)
 bienvenida.mainloop()
