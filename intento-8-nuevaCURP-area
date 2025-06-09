@@ -1,8 +1,8 @@
 #este es el intento 8
 # le agregue la curp de nuevo porque no me habia fijado que la borre
-#agrue un dato llamado area, para que el trabajador pueda seleccionar en que parte del hospital trabaja
+#agregue un dato llamado area, para que el trabajador pueda seleccionar en que parte del hospital trabaja
 #puse una entrada para CURP
-# agregue un menu desplegable para seleccionar el área del hospital en que trabaja
+#agregue un menu desplegable para seleccionar el área del hospital en que trabaja
 #se valida el CURP una vez ingresado
 #se guarda el CURP y el área en el archivo de texto junto con lo demas y se muestran en pantalla
 
@@ -48,7 +48,7 @@ def validar_datos(nombre, numero, celular, domicilio, edad, genero, nss, curp):
         return False
 
     if not celular.isdigit() or len(celular) != 10:
-        messagebox.showerror("Error", "Número de celular inválido. Debe tener exactamente 10 dígitos.")
+        messagebox.showerror("Error", "Número de celular inválido. Asegurate de que tenga exactamente 10 dígitos.")
         return False
 
     if not nss.isdigit() or len(nss) != 11:
