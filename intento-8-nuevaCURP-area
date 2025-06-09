@@ -1,0 +1,234 @@
+#este es el intento 8
+# le agregue la curp de nuevo porque no me habia fijado que la borre
+#agrue un dato llamado area, para que el trabajador pueda seleccionar en que parte del hospital trabaja
+#puse una entrada para CURP
+# agregue un menu desplegable para seleccionar el área del hospital en que trabaja
+#se valida el CURP una vez ingresado
+#se guarda el CURP y el área en el archivo de texto junto con lo demas y se muestran en pantalla
+
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime, timedelta
+
+trabajadores = {}
+intentos = 0
+
+def guardar_registro(nombre, numero):
+    clave = (nombre, numero)
+    t = trabajadores[clave]
+    with open("registro_trabajadores.txt", "a") as f:
+        f.write(f"{nombre} ({numero}) | Jornada: {t['jornada']} | Entrada: {t.get('entrada', 'N/A')} | "
+                f"Salida: {t.get('salida', 'N/A')} | Estado: {t['estado']} | "
+                f"Retardos: {t['retardos']} | Faltas: {t['faltas']} | "
+                f"Celular: {t.get('celular', 'N/A')} | Domicilio: {t.get('domicilio', 'N/A')} | "
+                f"Edad: {t.get('edad', 'N/A')} | Género: {t.get('genero', 'N/A')} | NSS: {t.get('nss', 'N/A')} | "
+                f"CURP: {t.get('curp', 'N/A')} | Área: {t.get('area', 'N/A')}\n")
+
+
+def obtener_estado(jornada, hora_actual):
+    horarios = {
+        "Matutina": datetime.strptime("7:00 AM", "%I:%M %p"),
+        "Vespertina": datetime.strptime("12:00 PM", "%I:%M %p"),
+        "Nocturna": datetime.strptime("5:00 PM", "%I:%M %p")
+    }
+    inicio = horarios.get(jornada)
+    if not inicio:
+        return "Jornada inválida"
+    if hora_actual > inicio + timedelta(minutes=10):
+        return "Retardo"
+    return "Puntual"
+
+def validar_datos(nombre, numero, celular, domicilio, edad, genero, nss, curp):
+    if not nombre or not numero or not celular or not domicilio or not edad or not genero or not nss or not curp:
+        messagebox.showerror("Error", "Todos los campos deben estar completos.")
+        return False
+
+    if not edad.isdigit() or not (18 <= int(edad) <= 99):
+        messagebox.showerror("Error", "Edad inválida. Debe ser un número entre 18 y 99.")
+        return False
+
+    if not celular.isdigit() or len(celular) != 10:
+        messagebox.showerror("Error", "Número de celular inválido. Debe tener exactamente 10 dígitos.")
+        return False
+
+    if not nss.isdigit() or len(nss) != 11:
+        messagebox.showerror("Error", "NSS inválido. Debe tener exactamente 11 dígitos.")
+        return False
+
+    if len(curp) != 18 or not curp.isalnum():
+        messagebox.showerror("Error", "CURP inválido. Debe tener exactamente 18 caracteres alfanuméricos.")
+        return False
+
+    return True
+
+def limpiar_campos():
+    entry_nombre.delete(0, tk.END)
+    entry_numero.delete(0, tk.END)
+    entry_celular.delete(0, tk.END)
+    entry_domicilio.delete(0, tk.END)
+    entry_edad.delete(0, tk.END)
+    entry_nss.delete(0, tk.END)
+    entry_curp.delete(0, tk.END)   
+    jornada_var.set("Matutina")
+    genero_var.set("Femenino")
+    area_var.set("General")       
+
+def registrar_entrada():
+    nombre = entry_nombre.get()
+    numero = entry_numero.get()
+    jornada = jornada_var.get()
+    celular = entry_celular.get()
+    domicilio = entry_domicilio.get()
+    edad = entry_edad.get()
+    genero = genero_var.get()
+    nss = entry_nss.get()
+    curp = entry_curp.get()
+    area = area_var.get()
+    clave = (nombre, numero)
+
+    if not validar_datos(nombre, numero, celular, domicilio, edad, genero, nss, curp):
+        return
+
+    ahora = datetime.now()
+    estado = obtener_estado(jornada, ahora)
+
+    if clave not in trabajadores:
+        trabajadores[clave] = {
+            "jornada": jornada,
+            "retardos": 0,
+            "faltas": 0,
+            "celular": celular,
+            "domicilio": domicilio,
+            "edad": edad,
+            "genero": genero,
+            "nss": nss,
+            "curp": curp,
+            "area": area
+        }
+
+    if estado == "Retardo":
+        trabajadores[clave]["retardos"] += 1
+        if trabajadores[clave]["retardos"] >= 3:
+            trabajadores[clave]["faltas"] += 1
+            estado = "Falta"
+            trabajadores[clave]["retardos"] = 0
+
+    trabajadores[clave]["entrada"] = ahora.strftime("%I:%M %p")
+    trabajadores[clave]["estado"] = estado
+
+    resumen = (f"[ENTRADA] {nombre} ({numero}) - Jornada: {jornada}, Entrada: {trabajadores[clave]['entrada']}, "
+               f"Estado: {estado}, CURP: {curp}, Área: {area}\n")
+    text_area.insert(tk.END, resumen)
+    guardar_registro(nombre, numero)
+
+    limpiar_campos()
+
+def registrar_salida():
+    nombre = entry_nombre.get()
+    numero = entry_numero.get()
+    clave = (nombre, numero)
+
+    if clave not in trabajadores:
+        messagebox.showerror("Error", "No se encontró registro de entrada para este trabajador.")
+        return
+
+    salida = datetime.now().strftime("%I:%M %p")
+    trabajadores[clave]["salida"] = salida
+
+    resumen = (f"[SALIDA] {nombre} ({numero}) - Salida: {salida}, Estado Final: {trabajadores[clave]['estado']}, "
+               f"CURP: {trabajadores[clave].get('curp', 'N/A')}, Área: {trabajadores[clave].get('area', 'N/A')}\n")
+    text_area.insert(tk.END, resumen)
+    guardar_registro(nombre, numero)
+
+    limpiar_campos()
+
+def mostrar_menu():
+    login.destroy()
+    global ventana
+    ventana = tk.Tk()
+    ventana.title("Registro de Trabajadores")
+    ventana.config(bg="lightblue")
+
+    tk.Label(ventana, text="Registro Automático de trabajadores (Entrada/Salida)", font=("Times New Roman", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10) 
+
+    def agregar_entrada(label_text, fila):
+        tk.Label(ventana, text=label_text).grid(row=fila, column=0, sticky='e')
+        entry = tk.Entry(ventana)
+        entry.grid(row=fila, column=1)
+        return entry
+
+    global entry_nombre, entry_numero, entry_celular, entry_domicilio, entry_edad, entry_nss, entry_curp
+    global jornada_var, genero_var, area_var
+
+    entry_nombre = agregar_entrada("Nombre:", 1)
+    entry_numero = agregar_entrada("Número de Control:", 2)
+    entry_celular = agregar_entrada("Celular:", 3)
+    entry_domicilio = agregar_entrada("Domicilio:", 4)
+    entry_edad = agregar_entrada("Edad:", 5)
+
+    tk.Label(ventana, text="Género:").grid(row=6, column=0, sticky='e')
+    genero_var = tk.StringVar()
+    genero_var.set("Femenino")
+    tk.OptionMenu(ventana, genero_var, "Femenino", "Masculino").grid(row=6, column=1)
+
+    entry_nss = agregar_entrada("NSS:", 7)
+    entry_curp = agregar_entrada("CURP:", 8)
+
+    tk.Label(ventana, text="Área del Hospital:").grid(row=9, column=0, sticky='e')
+    area_var = tk.StringVar()
+    area_var.set("General")
+    opciones_area = ["Camillas", "Consultorio", "Cirujano", "Doctor", "Cardiología", "Dermatología", "Pediatría", 
+                     "Sala de Operaciones", "Urgencias", "General"]
+    tk.OptionMenu(ventana, area_var, *opciones_area).grid(row=9, column=1)
+
+    tk.Label(ventana, text="Jornada:").grid(row=10, column=0, sticky='e')
+    jornada_var = tk.StringVar()
+    jornada_var.set("Matutina")
+    tk.OptionMenu(ventana, jornada_var, "Matutina", "Vespertina", "Nocturna").grid(row=10, column=1)
+
+    tk.Button(ventana, text="Registrar Entrada", command=registrar_entrada).grid(row=11, column=0, pady=10)
+    tk.Button(ventana, text="Registrar Salida", command=registrar_salida).grid(row=11, column=1, pady=10)
+
+    global text_area
+    text_area = tk.Text(ventana, height=15, width=80)
+    text_area.grid(row=12, column=0, columnspan=2, padx=10, pady=10)
+
+def verificar_contrasena():
+    global intentos
+    contrasena = entry_contrasena.get()
+    if contrasena == "hospital":
+        mostrar_menu()
+    else:
+        intentos += 1
+        if intentos < 3:
+            messagebox.showerror("Error", "Contraseña incorrecta, inténtalo de nuevo")
+        else:
+            messagebox.showerror("Acceso denegado", "Demasiados intentos fallidos")
+            login.destroy()
+
+def abrir_login():
+    bienvenida.destroy()
+    global login
+    login = tk.Tk()
+    login.title("Verificación de contraseña")
+    login.geometry("400x250")
+    login.config(bg="lightpink")
+
+    tk.Label(login, text="Ingresa la contraseña:").pack(pady=10)
+    global entry_contrasena
+    entry_contrasena = tk.Entry(login, show="*")
+    entry_contrasena.pack()
+
+    tk.Label(login, text='(la contraseña es "hospital")', fg="blue", font=("Times New Roman", 10)).pack(pady=5)
+
+    tk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=10)
+
+bienvenida = tk.Tk()
+bienvenida.title("Bienvenido al hospital Osamu 💖")
+bienvenida.geometry("600x300")
+bienvenida.config(bg="lightblue")
+
+tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
+tk.Button(bienvenida, text="Presione para continuar", command=abrir_login).pack(pady=10)
+
+bienvenida.mainloop()
