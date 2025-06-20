@@ -1,6 +1,7 @@
 #intento 10:
 #en este intento, converti el registro en una tabla para que fuera mas facil ver a los trabajadores, mi tabla por ahora consta de solo dos secciones, aun me falta agregar el registro para las vacaciones
 #modifique un poco el codigo para que ahora tenga otro apartado que permite seleccionar el tipo de departamento del trabajador
+#agregue los departamentos y puestos en el hospital para que los trabajadores los puedan seleccionar, hice que aparecieran a forma de lista para que sea mas facil 
 
 
 import tkinter as tk
@@ -239,6 +240,61 @@ def mostrar_menu():
 
     tree.pack(fill="both", expand=True, padx=10, pady=10)
 
+
+    # Pestaña Puesto en el hospital
+    tab_puestos = ttk.Frame(notebook)
+    notebook.add(tab_puestos, text="Puesto en el hospital")
+
+    tk.Label(tab_puestos, text="Selecciona tu puesto en el hospital:", font=("Arial", 12)).pack(pady=10)
+
+    puestos = [
+        "Personal médico:",
+        "  - Médico/a general",
+        "  - Especialista (cardiólogo, neurólogo, etc.)",
+        "  - Médico residente (en formación)",
+        "  - Médico de urgencias",
+        "  - Anestesiólogo",
+        "  - Cirujano/a",
+        "Personal de enfermería:",
+        "  - Enfermero/a",
+        "  - Auxiliar de enfermería (TCAE o TENS según el país)",
+        "  - Supervisor/a de enfermería",
+        "Personal técnico:",
+        "  - Técnico de laboratorio",
+        "  - Técnico de radiología",
+        "  - Técnico en anatomía patológica",
+        "  - Técnico de farmacia",
+        "Personal administrativo:",
+        "  - Recepcionista / Admisión",
+        "  - Auxiliar administrativo",
+        "  - Contable",
+        "  - Responsable de RRHH",
+        "  - Director financiero",
+        "  - Jefe de compras",
+        "Otros puestos:",
+        "  - Celador (traslado de pacientes, apoyo en quirófano, etc.)",
+        "  - Personal de limpieza",
+        "  - Cocineros y dietistas",
+        "  - Personal de mantenimiento",
+        "  - Personal de seguridad"
+    ]
+
+    frame_listbox = tk.Frame(tab_puestos)
+    frame_listbox.pack(pady=10, padx=10, fill="both", expand=True)
+
+    scrollbar = tk.Scrollbar(frame_listbox)
+    scrollbar.pack(side="right", fill="y")
+
+    listbox_puestos = tk.Listbox(frame_listbox, yscrollcommand=scrollbar.set, selectmode="browse", height=15, width=70)
+    for puesto in puestos:
+        listbox_puestos.insert(tk.END, puesto)
+
+    listbox_puestos.pack(side="left", fill="both", expand=True)
+    scrollbar.config(command=listbox_puestos.yview)
+
+
+
+
     ventana.mainloop()
 
 
@@ -276,4 +332,3 @@ bienvenida.config(bg="lightblue")
 tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
 tk.Button(bienvenida, text="Presione para continuar", command=abrir_login).pack(pady=10)
 bienvenida.mainloop()
-
