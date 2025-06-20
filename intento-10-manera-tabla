@@ -2,6 +2,7 @@
 #en este intento, converti el registro en una tabla para que fuera mas facil ver a los trabajadores, mi tabla por ahora consta de solo dos secciones, aun me falta agregar el registro para las vacaciones
 #modifique un poco el codigo para que ahora tenga otro apartado que permite seleccionar el tipo de departamento del trabajador
 #agregue los departamentos y puestos en el hospital para que los trabajadores los puedan seleccionar, hice que aparecieran a forma de lista para que sea mas facil 
+#corregi unos errores pequeños, ahora para que funcione solo necesito hacer que guarde los datos de los departamentos y puestos en el historial, porque aun no los registra
 
 
 import tkinter as tk
@@ -205,12 +206,14 @@ def mostrar_menu():
 
     text_area = tk.Text(tab_historial, height=20, width=100)
     text_area.pack(padx=10, pady=10)
-
     
     tab_departamentos = ttk.Frame(notebook)
     notebook.add(tab_departamentos, text="Departamentos")
 
     tree = ttk.Treeview(tab_departamentos)
+    global tree_departamentos_global
+    tree_departamentos_global = tree
+
     tree.heading("#0", text="Departamentos del Hospital", anchor="w")
 
     datos_departamentos = {
@@ -240,8 +243,6 @@ def mostrar_menu():
 
     tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-
-    # Pestaña Puesto en el hospital
     tab_puestos = ttk.Frame(notebook)
     notebook.add(tab_puestos, text="Puesto en el hospital")
 
@@ -290,13 +291,12 @@ def mostrar_menu():
         listbox_puestos.insert(tk.END, puesto)
 
     listbox_puestos.pack(side="left", fill="both", expand=True)
+    global listbox_puestos_global
+    listbox_puestos_global = listbox_puestos
+
     scrollbar.config(command=listbox_puestos.yview)
 
-
-
-
     ventana.mainloop()
-
 
 def verificar_contrasena():
     global intentos
