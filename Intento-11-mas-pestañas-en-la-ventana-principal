@@ -4,7 +4,7 @@
 #corregi el codigo para que ya guarde los datos, pero por error borre algunas de sus caracteristicas, asi que lo arreglare
 #ya lo arregle mas
 #ya lo segui editando para que tenga todas las pestañas que yo queria que tuviera, y ya tiene las vacaciones integradas, solo me falta ajustarlo un poco y ya
-
+#sigo haciendo mejoras
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -270,7 +270,8 @@ def crear_pestañas_principales():
     global listbox_puestos_global, listbox_contrato_global, tree_departamentos_global
     global entry_nombre_control, entry_numero_control, entry_hora_llegada
     global entry_vac_nombre, entry_vac_numero, entry_vac_inicio, entry_vac_fin, text_area
-
+    
+    
     ventana = tk.Tk()
     ventana.title("Registro de Trabajadores Hospital Osamu")
     notebook = ttk.Notebook(ventana)
@@ -314,6 +315,20 @@ def crear_pestañas_principales():
     ttk.Label(tab7, text="Inicio AAAA-MM-DD:").grid(row=2, column=0); entry_vac_inicio = ttk.Entry(tab7); entry_vac_inicio.grid(row=2, column=1)
     ttk.Label(tab7, text="Fin AAAA-MM-DD:").grid(row=3, column=0); entry_vac_fin = ttk.Entry(tab7); entry_vac_fin.grid(row=3, column=1)
     ttk.Button(tab7, text="Registrar vacaciones", command=registrar_vacaciones_ext).grid(row=4, column=0, columnspan=2, pady=10)
+        # --- Extensión: Mostrar nombre en pestaña de vacaciones ---
+    def actualizar_nombre_vacaciones(*args):
+        nombre = ""
+        numero = entry_vac_numero.get().strip()
+        for (n, num), datos in trabajadores.items():
+            if num == numero:
+                nombre = n
+                break
+        entry_vac_nombre.delete(0, tk.END)
+        entry_vac_nombre.insert(0, nombre)
+    
+    entry_vac_numero.bind("<KeyRelease>", actualizar_nombre_vacaciones)
+    entry_vac_numero.bind("<FocusOut>", actualizar_nombre_vacaciones)
+
 
     ventana.mainloop()
 
@@ -349,9 +364,4 @@ bienvenida.geometry("600x300")
 bienvenida.config(bg="lightblue")
 ttk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
 ttk.Button(bienvenida, text="Iniciar sesión", command=abrir_login).pack(pady=30)
-bienvenida.mainloop()
-
-bienvenida.config(bg="lightblue")
-tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
-tk.Button(bienvenida, text="Iniciar sesión", font=("Arial", 14), command=abrir_login).pack(pady=30)
 bienvenida.mainloop()
