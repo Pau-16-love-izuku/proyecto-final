@@ -2,7 +2,7 @@
 #en este intento decidi que voy a mejorar mucho mas el codigo
 #ya revise mi codigo de nuevo por algunos problemas, pero ya registra y se guarda la informacion en un archivo y se muestra en el historial
 #ya cuenta las vacaciones y se guia por los datos de Nombre del trabajador y por el numero de control
-
+#ya solo voy a agregar una pestaña en la que se de a manera de listado los datos del historial para que sea mas facil visualizar la informacion del trabajador 
 
 
 import tkinter as tk
@@ -10,7 +10,6 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import json, os
 
-# --- Persistencia en JSON ---
 archivo_datos = "trabajadores.json"
 if os.path.exists(archivo_datos):
     with open(archivo_datos, "r", encoding="utf-8") as f:
@@ -28,7 +27,6 @@ def guardar_datos_json():
     with open(archivo_datos, "w", encoding="utf-8") as f:
         json.dump(serial, f, indent=4, ensure_ascii=False)
 
-# --- Registro en TXT ---
 def guardar_registro(nombre, numero):
     clave = (nombre, numero)
     if clave not in trabajadores:
@@ -48,7 +46,6 @@ def guardar_registro(nombre, numero):
         )
     print(f" Registro guardado en archivo para: {nombre} ({numero})")
 
-# --- Funciones auxiliares ---
 def rango_fechas(inicio, fin):
     inicio = datetime.strptime(inicio, "%Y-%m-%d")
     fin = datetime.strptime(fin, "%Y-%m-%d")
@@ -111,7 +108,6 @@ def validar_datos(nombre, numero, celular, domicilio, edad, genero, nss, curp):
         return False
     return True
 
-# --- Limpiar campos ---
 def limpiar_campos():
     for entry in [entry_nombre, entry_numero, entry_celular,
                   entry_domicilio, entry_edad, entry_nss, entry_curp]:
@@ -132,7 +128,6 @@ def limpiar_campos_vacacion():
     entry_vac_inicio.delete(0, tk.END)
     entry_vac_fin.delete(0, tk.END)
 
-# --- Registro de eventos ---
 def registrar_entrada():
     nombre = entry_nombre.get()
     numero = entry_numero.get()
@@ -277,7 +272,6 @@ def registrar_vacaciones_ext():
     guardar_datos_json()
     limpiar_campos_vacacion()
 
-# --- Interfaz gráfica ---
 def crear_pestañas_principales():
     global entry_nombre, entry_numero, entry_celular, entry_domicilio
     global entry_edad, entry_nss, entry_curp
@@ -292,7 +286,6 @@ def crear_pestañas_principales():
     notebook = ttk.Notebook(ventana)
     notebook.pack(fill="both", expand=True)
 
-    # Tab 1: Datos
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Datos del Trabajador")
     labels = ["Nombre:", "Número de Control:", "Celular:", "Domicilio:", "Edad:",
@@ -325,13 +318,6 @@ def crear_pestañas_principales():
     ttk.Button(tab1, text="Registrar Entrada", command=registrar_entrada).grid(row=len(labels), column=0, pady=10)
     ttk.Button(tab1, text="Registrar Salida", command=registrar_salida).grid(row=len(labels), column=1, pady=10)
 
-    # Tab 2: Historial
-    tab2 = ttk.Frame(notebook)
-    notebook.add(tab2, text="Historial")
-    text_area = tk.Text(tab2, height=20, width=100)
-    text_area.pack(padx=10, pady=10)
-
-    # Tab 3: Departamentos
     tab3 = ttk.Frame(notebook)
     notebook.add(tab3, text="Departamentos")
     tree_departamentos_global = ttk.Treeview(tab3)
@@ -359,7 +345,6 @@ def crear_pestañas_principales():
             tree_departamentos_global.insert(parent, "end", text=sub)
     tree_departamentos_global.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Tab 4: Puesto
     tab4 = ttk.Frame(notebook)
     notebook.add(tab4, text="Puesto en el hospital")
     listbox_puestos_global = tk.Listbox(tab4)
@@ -374,7 +359,6 @@ def crear_pestañas_principales():
         listbox_puestos_global.insert(tk.END, p)
     listbox_puestos_global.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Tab 5: Tipo de contrato
     tab5 = ttk.Frame(notebook)
     notebook.add(tab5, text="Tipo de contrato")
     listbox_contrato_global = tk.Listbox(tab5)
@@ -386,7 +370,6 @@ def crear_pestañas_principales():
         listbox_contrato_global.insert(tk.END, c)
     listbox_contrato_global.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Tab 6: Asistencias Ext.
     tab6 = ttk.Frame(notebook)
     notebook.add(tab6, text="Asistencias Ext.")
     ttk.Label(tab6, text="Nombre:").grid(row=0, column=0)
@@ -397,7 +380,6 @@ def crear_pestañas_principales():
     entry_hora_llegada = ttk.Entry(tab6); entry_hora_llegada.grid(row=2, column=1)
     ttk.Button(tab6, text="Registrar asistencia", command=registrar_asistencia_ext).grid(row=3, column=0, columnspan=2, pady=10)
 
-    # Tab 7: Vacaciones
     tab7 = ttk.Frame(notebook)
     notebook.add(tab7, text="Vacaciones")
     ttk.Label(tab7, text="Nombre:").grid(row=0, column=0)
@@ -420,9 +402,13 @@ def crear_pestañas_principales():
     entry_vac_numero.bind("<KeyRelease>", actualizar_nombre_vac)
     entry_vac_numero.bind("<FocusOut>", actualizar_nombre_vac)
 
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Historial")
+    text_area = tk.Text(tab2, height=20, width=100)
+    text_area.pack(padx=10, pady=10)
+
     ventana.mainloop()
 
-# --- Login ---
 def verificar_contrasena():
     global intentos
     if entry_contrasena.get() == "hospital":
@@ -449,7 +435,6 @@ def abrir_login():
     ttk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=10)
     login.mainloop()
 
-# --- Inicio ---
 bienvenida = tk.Tk()
 bienvenida.title("Bienvenido al hospital Osamu 💖")
 bienvenida.geometry("600x300")
