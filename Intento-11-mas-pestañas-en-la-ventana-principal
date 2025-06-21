@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
-trabajadores = []  # lista de dicts, en vez de tu dict con clave tupla
+trabajadores = []
 LIMITE_POR_TURNO = 2
 RETARDOS_PARA_FALTA = 3
 intentos = 0
@@ -28,10 +28,6 @@ def validar_vacaciones(turno, fechas):
                         return False, f
     return True, None
 
-def limpiar_campos_entrada():
-    entry_nombre_control.delete(0, tk.END)
-    entry_hora_llegada.delete(0, tk.END)
-
 def limpiar_campos_registro():
     for w in [entry_control, entry_nombre, entry_edad, entry_curp, entry_nss, entry_telefono, entry_domicilio]:
         w.delete(0, tk.END)
@@ -40,6 +36,21 @@ def limpiar_campos_registro():
     combo_area.set('')
     combo_jornada.set('')
     combo_turno.set('')
+
+def limpiar_campos_asistencia():
+    entry_nombre_control.delete(0, tk.END)
+    entry_hora_llegada.delete(0, tk.END)
+
+def limpiar_campos_vacacion():
+    entry_vac_nombre.delete(0, tk.END)
+    entry_vac_inicio.delete(0, tk.END)
+    entry_vac_fin.delete(0, tk.END)
+
+def guardar_registro_archivo():
+    with open("registro_trabajadores.txt", "a", encoding="utf-8") as f:
+        for t in trabajadores:
+            for a in t["asistencias"]:
+                f.write(f"{t['nombre']} ({t['control']}) | Fecha: {a['fecha']} | Tipo: {a['tipo']} | Jornada: {t['jornada']} | Puesto: {t['puesto']} | Área: {t['area']}\n")
 
 def guardar_trabajador():
     if not entry_nombre.get() or not combo_turno.get():
@@ -93,8 +104,9 @@ def registrar_asistencia():
                     tipo += " (se registró una falta)"
             t["asistencias"].append({"fecha": hoy, "tipo": tipo})
             actualizar_listado()
-            messagebox.showinfo("Registrado", f"Asistencia registrada: {tipo}")
             text_area.insert(tk.END, f"[ENTRADA] {t['nombre']} - {hoy} {llegada_str} | {tipo}\n")
+            limpiar_campos_asistencia()
+            messagebox.showinfo("Registrado", f"Asistencia registrada: {tipo}")
             return
     messagebox.showerror("No encontrado", "Trabajador no encontrado.")
 
@@ -115,6 +127,7 @@ def registrar_vacaciones():
                 return
             t["vacaciones"] += fechas
             actualizar_listado()
+            limpiar_campos_vacacion()
             messagebox.showinfo("Éxito", "Vacaciones registradas.")
             return
     messagebox.showerror("No encontrado", "Trabajador no encontrado.")
@@ -126,13 +139,6 @@ def actualizar_listado():
             t["nombre"], t["genero"], t["edad"], t["turno"], t["jornada"],
             len(t["asistencias"]), t["retardos"], t["faltas"], len(t["vacaciones"])
         ))
-
-
-def guardar_registro_archivo():
-    with open("registro_trabajadores.txt", "a", encoding="utf-8") as f:
-        for t in trabajadores:
-            for a in t["asistencias"]:
-                f.write(f"{t['nombre']} ({t['control']}) | Fecha: {a['fecha']} | Tipo: {a['tipo']} | Jornada: {t['jornada']} | Puesto: {t['puesto']} | Área: {t['area']}\n")
 
 def verificar_contrasena():
     global intentos
@@ -151,9 +157,15 @@ def abrir_login():
     bienvenida.destroy()
     global login, entry_contrasena
     login = tk.Tk()
-    login.title("Verificación de contraseña"); login.geometry("400x200")
-    tk.Label(login, text="Ingrese contraseña:").pack(pady=10)
-    entry_contrasena = tk.Entry(login, show="*"); entry_contrasena.pack()
+    login.title("Verificación de contraseña")
+    login.geometry("400x250")
+    login.config(bg="lightpink")  # Color de fondo rosado
+
+    tk.Label(login, text="Ingrese contraseña:", bg="lightpink").pack(pady=10)
+    entry_contrasena = tk.Entry(login, show="*")
+    entry_contrasena.pack()
+    # Label con pista de contraseña en azul y fuente Times New Roman
+    tk.Label(login, text='(la contraseña es "hospital")', fg="blue", font=("Times New Roman", 10), bg="lightpink").pack(pady=5)
     tk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=10)
 
 def abrir_app():
@@ -162,40 +174,47 @@ def abrir_app():
     global entry_nombre_control, entry_hora_llegada
     global entry_vac_nombre, entry_vac_inicio, entry_vac_fin
     global tree_listado, text_area
+    global tree_departamentos, listbox_puestos, listbox_contrato
 
-    root = tk.Tk(); root.title("Sistema de Registro - Hospital")
-    nb = ttk.Notebook(root); nb.pack(fill="both", expand=True)
+    root = tk.Tk()
+    root.title("Sistema de Registro - Hospital Osamu")
+    nb = ttk.Notebook(root)
+    nb.pack(fill="both", expand=True)
 
     f_reg = ttk.Frame(nb); nb.add(f_reg, text="Registro")
-    labels = [("Número control",0),("Nombre",1),("Edad",2),("Género",3),
-              ("CURP",4),("NSS",5),("Teléfono",6),("Domicilio",7),
-              ("Puesto",8),("Área",9),("Jornada",10),("Turno",11)]
-    for txt,row in labels:
-        tk.Label(f_reg, text=txt+":").grid(row=row, column=0,sticky="e")
-    entry_control = tk.Entry(f_reg); entry_control.grid(row=0,column=1)
-    entry_nombre = tk.Entry(f_reg); entry_nombre.grid(row=1,column=1)
-    entry_edad = tk.Entry(f_reg); entry_edad.grid(row=2,column=1)
-    combo_genero = ttk.Combobox(f_reg, values=["Masculino","Femenino"]); combo_genero.grid(row=3,column=1)
-    entry_curp = tk.Entry(f_reg); entry_curp.grid(row=4,column=1)
-    entry_nss = tk.Entry(f_reg); entry_nss.grid(row=5,column=1)
-    entry_telefono = tk.Entry(f_reg); entry_telefono.grid(row=6,column=1)
-    entry_domicilio = tk.Entry(f_reg); entry_domicilio.grid(row=7,column=1)
-    combo_puesto = ttk.Combobox(f_reg, values=["Enfermero/a","Médico/a","Camillero/a","Limpieza","Administrativo"]); combo_puesto.grid(row=8,column=1)
-    combo_area = ttk.Combobox(f_reg, values=["Urgencias","Pediatría","Quirófano","Farmacia","Consulta externa"]); combo_area.grid(row=9,column=1)
-    combo_jornada = ttk.Combobox(f_reg, values=["Lunes a Viernes","Lunes a Sábado","Fines de semana","Turno corrido"]); combo_jornada.grid(row=10,column=1)
-    combo_turno = ttk.Combobox(f_reg, values=["Mañana","Tarde","Noche"]); combo_turno.grid(row=11,column=1)
-    tk.Button(f_reg, text="Guardar trabajador", command=guardar_trabajador).grid(row=12,column=0,columnspan=2,pady=10)
+    campos = [
+        ("Número control",0),("Nombre",1),("Edad",2),("Género",3),
+        ("CURP",4),("NSS",5),("Teléfono",6),("Domicilio",7),
+        ("Puesto",8),("Área",9),("Jornada",10),("Turno",11)
+    ]
+    for txt,row in campos:
+        tk.Label(f_reg,text=txt+":").grid(row=row,column=0,sticky="e")
+    entry_control=tk.Entry(f_reg);entry_control.grid(row=0,column=1)
+    entry_nombre=tk.Entry(f_reg);entry_nombre.grid(row=1,column=1)
+    entry_edad=tk.Entry(f_reg);entry_edad.grid(row=2,column=1)
+    combo_genero=ttk.Combobox(f_reg,values=["Masculino","Femenino"]);combo_genero.grid(row=3,column=1)
+    entry_curp=tk.Entry(f_reg);entry_curp.grid(row=4,column=1)
+    entry_nss=tk.Entry(f_reg);entry_nss.grid(row=5,column=1)
+    entry_telefono=tk.Entry(f_reg);entry_telefono.grid(row=6,column=1)
+    entry_domicilio=tk.Entry(f_reg);entry_domicilio.grid(row=7,column=1)
+    combo_puesto=ttk.Combobox(f_reg,values=["Enfermero/a","Médico/a","Camillero/a","Limpieza","Administrativo"]);combo_puesto.grid(row=8,column=1)
+    combo_area=ttk.Combobox(f_reg,values=["Urgencias","Pediatría","Quirófano","Farmacia","Consulta externa"]);combo_area.grid(row=9,column=1)
+    combo_jornada=ttk.Combobox(f_reg,values=["Lunes a Viernes","Lunes a Sábado","Fines de semana","Turno corrido"]);combo_jornada.grid(row=10,column=1)
+    combo_turno=ttk.Combobox(f_reg,values=["Mañana","Tarde","Noche"]);combo_turno.grid(row=11,column=1)
+    tk.Button(f_reg,text="Guardar trabajador",command=guardar_trabajador).grid(row=12,column=0,columnspan=2,pady=10)
 
     f_as = ttk.Frame(nb); nb.add(f_as, text="Asistencias")
-    tk.Label(f_as, text="Nombre:").grid(row=0,column=0); entry_nombre_control = tk.Entry(f_as); entry_nombre_control.grid(row=0,column=1)
-    tk.Label(f_as, text="Hora llegada HH:MM:").grid(row=1,column=0); entry_hora_llegada = tk.Entry(f_as); entry_hora_llegada.grid(row=1,column=1)
-    tk.Button(f_as, text="Registrar asistencia", command=registrar_asistencia).grid(row=2,column=0,columnspan=2,pady=10)
+    tk.Label(f_as,text="Nombre:").grid(row=0,column=0)
+    entry_nombre_control=tk.Entry(f_as);entry_nombre_control.grid(row=0,column=1)
+    tk.Label(f_as,text="Hora llegada HH:MM:").grid(row=1,column=0)
+    entry_hora_llegada=tk.Entry(f_as);entry_hora_llegada.grid(row=1,column=1)
+    tk.Button(f_as,text="Registrar asistencia",command=registrar_asistencia).grid(row=2,column=0,columnspan=2,pady=10)
 
     f_vac = ttk.Frame(nb); nb.add(f_vac, text="Vacaciones")
-    tk.Label(f_vac, text="Nombre:").grid(row=0,column=0); entry_vac_nombre = tk.Entry(f_vac); entry_vac_nombre.grid(row=0,column=1)
-    tk.Label(f_vac, text="Inicio AAAA-MM-DD:").grid(row=1,column=0); entry_vac_inicio = tk.Entry(f_vac); entry_vac_inicio.grid(row=1,column=1)
-    tk.Label(f_vac, text="Fin AAAA-MM-DD:").grid(row=2,column=0); entry_vac_fin = tk.Entry(f_vac); entry_vac_fin.grid(row=2,column=1)
-    tk.Button(f_vac, text="Registrar vacaciones", command=registrar_vacaciones).grid(row=3,column=0,columnspan=2,pady=10)
+    tk.Label(f_vac,text="Nombre:").grid(row=0,column=0); entry_vac_nombre=tk.Entry(f_vac);entry_vac_nombre.grid(row=0,column=1)
+    tk.Label(f_vac,text="Inicio AAAA-MM-DD:").grid(row=1,column=0); entry_vac_inicio=tk.Entry(f_vac);entry_vac_inicio.grid(row=1,column=1)
+    tk.Label(f_vac,text="Fin AAAA-MM-DD:").grid(row=2,column=0); entry_vac_fin=tk.Entry(f_vac);entry_vac_fin.grid(row=2,column=1)
+    tk.Button(f_vac,text="Registrar vacaciones",command=registrar_vacaciones).grid(row=3,column=0,columnspan=2,pady=10)
 
     f_list = ttk.Frame(nb); nb.add(f_list, text="Listados")
     cols = ("Nombre","Género","Edad","Turno","Jornada","Asistencias","Retardos","Faltas","Vacaciones")
@@ -204,7 +223,36 @@ def abrir_app():
     tree_listado.pack(fill="both", expand=True)
 
     f_hist = ttk.Frame(nb); nb.add(f_hist, text="Historial")
-    text_area = tk.Text(f_hist, height=15); text_area.pack(fill="both", expand=True, padx=10, pady=10)
+    text_area=tk.Text(f_hist, height=15);text_area.pack(fill="both", expand=True,padx=10,pady=10)
+
+    f_dep = ttk.Frame(nb); nb.add(f_dep, text="Departamentos")
+    tree_departamentos = ttk.Treeview(f_dep)
+    tree_departamentos.heading("#0", text="Departamentos del Hospital", anchor="w")
+    datos_depart = {
+        "Clínicos / Asistenciales": ["Medicina Interna","Cirugía General","Ginecología y Obstetricia","Anestesiología","UCI","Psiquiatría","Oncología","Neurología","Rehabilitación","Radiología","Laboratorio"],
+        "Enfermería": ["Enfermería general","Enfermería especializada","Supervisión"] ,
+        "Administrativos": ["Dirección","RRHH","Finanzas","Compras","Admisiones","Sistemas"],
+        "Servicios": ["Mantenimiento","Limpieza","Cocina","Lavandería","Seguridad","Transporte"]
+    }
+    for cat,subs in datos_depart.items():
+        p=tree_departamentos.insert("", "end", text=cat)
+        for s in subs:
+            tree_departamentos.insert(p, "end", text=s)
+    tree_departamentos.pack(fill="both", expand=True, padx=10, pady=10)
+
+    f_pue = ttk.Frame(nb); nb.add(f_pue, text="Puestos")
+    listbox_puestos = tk.Listbox(f_pue)
+    lista_puestos = ["Médico general","Especialista","Médico residente","Enfermero","Aux. enfermería","TCAE","Supervisor enfermería","Técnico lab","Técnico radiología","Farmacéutico","Recepcionista","Administrativo","Contable","Compras","Celador","Limpieza","Mantenimiento","Cocina","Seguridad"]
+    for p in lista_puestos:
+        listbox_puestos.insert(tk.END, p)
+    listbox_puestos.pack(fill="both", expand=True,padx=10,pady=10)
+
+    f_con = ttk.Frame(nb); nb.add(f_con, text="Tipo de Contrato")
+    listbox_contrato = tk.Listbox(f_con)
+    tipos_contrato = ["Indefinido","Temporal","Interino","Formación","Por horas","Subcontrato"]
+    for c in tipos_contrato:
+        listbox_contrato.insert(tk.END, c)
+    listbox_contrato.pack(fill="both", expand=True,padx=10,pady=10)
 
     root.protocol("WM_DELETE_WINDOW", lambda: [guardar_registro_archivo(), root.destroy()])
     root.mainloop()
@@ -212,6 +260,7 @@ def abrir_app():
 bienvenida = tk.Tk()
 bienvenida.title("Bienvenido al hospital Osamu 💖")
 bienvenida.geometry("600x300")
-tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
-tk.Button(bienvenida, text="Presione para continuar", command=abrir_login).pack(pady=10)
+bienvenida.config(bg="lightblue")
+tk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16), bg="lightblue").pack(pady=20)
+tk.Button(bienvenida, text="Iniciar sesión", font=("Arial", 14), command=abrir_login).pack(pady=30)
 bienvenida.mainloop()
