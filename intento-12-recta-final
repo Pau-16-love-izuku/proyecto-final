@@ -5,6 +5,7 @@
 #ya solo voy a agregar una pestaña en la que se de a manera de listado los datos del historial para que sea mas facil visualizar la informacion del trabajador 
 #tambien corregi un poco el codigo, porque note que cuando el trabajador queria registrar su entrada, no lo dejaba porque no guardaba la seleccion de el puesto, departamento y tipo de contrato y no los registraba en el historial
 #corregi esa parte y ya lo registra, lo puse a manera de una lista y reduje las opciones para que si pueda tomar y registrar
+#ya agregue la pestaña para el listado, pero aun no registra los datos como el historial, corregire eso y agregare un buscador para localizar a los trabajadores mas facilmente por nombre o por numero de control
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -44,7 +45,6 @@ def guardar_registro(nombre, numero):
             f"Departamento: {t.get('departamento','N/A')} | Puesto: {t.get('puesto','N/A')} | "
             f"Tipo de Contrato: {t.get('tipo_contrato','N/A')}\n"
         )
-
 
 def rango_fechas(inicio, fin):
     inicio = datetime.strptime(inicio, "%Y-%m-%d")
@@ -237,7 +237,7 @@ def registrar_asistencia_ext():
         return
 
     llegada_str = entry_hora_llegada.get().strip()
-    llegada_str = llegada_str.upper()  # Acepta "am"/"pm" en minúscula también
+    llegada_str = llegada_str.upper()  
 
     formatos_validos = ["%I:%M %p", "%H:%M"]
     llegada = None
@@ -317,6 +317,7 @@ def crear_pestañas_principales():
     notebook = ttk.Notebook(ventana)
     notebook.pack(fill="both", expand=True)
 
+
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Datos del Trabajador")
     labels = ["Nombre:", "Número de Control:", "Celular:", "Domicilio:", "Edad:",
@@ -348,8 +349,6 @@ def crear_pestañas_principales():
 
     ttk.Button(tab1, text="Registrar Entrada", command=registrar_entrada).grid(row=len(labels), column=0, pady=10)
     ttk.Button(tab1, text="Registrar Salida", command=registrar_salida).grid(row=len(labels), column=1, pady=10)
-    # … aquí incluirías todo el setup del primer código para pestaña de datos básicos …
-
 
     tab4 = ttk.Frame(notebook)
     notebook.add(tab4, text="Puesto")
@@ -381,8 +380,10 @@ def crear_pestañas_principales():
         tree_departamentos_global.insert("", "end", text=d)
     tree_departamentos_global.pack(fill="both", expand=True)
 
+
     tab6 = ttk.Frame(notebook)
     notebook.add(tab6, text="Asistencias Ext.")
+
     ttk.Label(tab6, text="Nombre:").grid(row=0, column=0)
     entry_nombre_control = ttk.Entry(tab6); entry_nombre_control.grid(row=0, column=1)
     ttk.Label(tab6, text="Número control:").grid(row=1, column=0)
@@ -393,6 +394,7 @@ def crear_pestañas_principales():
 
     tab7 = ttk.Frame(notebook)
     notebook.add(tab7, text="Vacaciones")
+
     ttk.Label(tab7, text="Nombre:").grid(row=0, column=0)
     entry_vac_nombre = ttk.Entry(tab7); entry_vac_nombre.grid(row=0, column=1)
     ttk.Label(tab7, text="Número control:").grid(row=1, column=0)
@@ -402,6 +404,8 @@ def crear_pestañas_principales():
     ttk.Label(tab7, text="Fin AAAA-MM-DD:").grid(row=3, column=0)
     entry_vac_fin = ttk.Entry(tab7); entry_vac_fin.grid(row=3, column=1)
     ttk.Button(tab7, text="Registrar vacaciones", command=registrar_vacaciones_ext).grid(row=4, column=0, columnspan=2, pady=10)
+
+
     def actualizar_nombre_vac(*args):
         num = entry_vac_numero.get().strip()
         nombre = ""
@@ -418,7 +422,47 @@ def crear_pestañas_principales():
     text_area = tk.Text(tab2, height=20, width=100)
     text_area.pack(padx=10, pady=10)
 
+    # === PESTAÑA LISTADO ===
+    tab_listado = ttk.Frame(notebook)
+    notebook.add(tab_listado, text="Listado")
+
+    columnas = ("Nombre", "Número", "Género", "Edad", "Área", "Puesto", "Turno", "Jornada", "Días", "Asistencias", "Retardos", "Faltas", "Vacaciones")
+    tree_listado = ttk.Treeview(tab_listado, columns=columnas, show="headings")
+
+    for col in columnas:
+        tree_listado.heading(col, text=col)
+        tree_listado.column(col, width=120)
+
+    tree_listado.pack(fill="both", expand=True)
+
+    def actualizar_listado():
+        tree_listado.delete(*tree_listado.get_children())
+        for (nombre, numero), t in trabajadores.items():
+            tree_listado.insert("", "end", values=(
+                nombre,
+                numero,
+                t.get("genero", ""),
+                t.get("edad", ""),
+                t.get("area", ""),
+                t.get("puesto", ""),
+                t.get("turno", ""),
+                t.get("jornada", ""),
+                t.get("dias", ""),
+                1 if "entrada" in t else 0,
+                t.get("retardos", 0),
+                t.get("faltas", 0),
+                len(t.get("vacaciones", []))
+            ))
+
+    def al_cambiar_pestana(event):
+        if notebook.index(notebook.select()) == notebook.tabs().index(str(tab_listado)):
+            actualizar_listado()
+
+    notebook.bind("<<NotebookTabChanged>>", al_cambiar_pestana)
+
+
     ventana.mainloop()
+
 
 def verificar_contrasena():
     global intentos
@@ -452,4 +496,6 @@ bienvenida.geometry("600x300")
 bienvenida.config(bg="lightblue")
 ttk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
 ttk.Button(bienvenida, text="Iniciar sesión", command=abrir_login).pack(pady=30)
+
 bienvenida.mainloop()
+
