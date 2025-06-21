@@ -3,7 +3,8 @@
 #ya revise mi codigo de nuevo por algunos problemas, pero ya registra y se guarda la informacion en un archivo y se muestra en el historial
 #ya cuenta las vacaciones y se guia por los datos de Nombre del trabajador y por el numero de control
 #ya solo voy a agregar una pestaña en la que se de a manera de listado los datos del historial para que sea mas facil visualizar la informacion del trabajador 
-
+#tambien corregi un poco el codigo, porque note que cuando el trabajador queria registrar su entrada, no lo dejaba porque no guardaba la seleccion de el puesto, departamento y tipo de contrato y no los registraba en el historial
+#corregi esa parte y ya lo registra, lo puse a manera de una lista y reduje las opciones para que si pueda tomar y registrar
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -30,7 +31,6 @@ def guardar_datos_json():
 def guardar_registro(nombre, numero):
     clave = (nombre, numero)
     if clave not in trabajadores:
-        print(" No se encontró el trabajador para guardar.")
         return
     t = trabajadores[clave]
     with open("registro_trabajadores.txt", "a", encoding="utf-8") as f:
@@ -44,7 +44,7 @@ def guardar_registro(nombre, numero):
             f"Departamento: {t.get('departamento','N/A')} | Puesto: {t.get('puesto','N/A')} | "
             f"Tipo de Contrato: {t.get('tipo_contrato','N/A')}\n"
         )
-    print(f" Registro guardado en archivo para: {nombre} ({numero})")
+
 
 def rango_fechas(inicio, fin):
     inicio = datetime.strptime(inicio, "%Y-%m-%d")
@@ -131,21 +131,33 @@ def limpiar_campos_vacacion():
 def registrar_entrada():
     nombre = entry_nombre.get()
     numero = entry_numero.get()
+
     if not validar_datos(nombre, numero,
                         entry_celular.get(), entry_domicilio.get(),
                         entry_edad.get(), genero_var.get(),
                         entry_nss.get(), entry_curp.get()):
         return
+
     jornada = jornada_var.get()
     ahora = datetime.now()
     clave = (nombre, numero)
     estado = obtener_estado(jornada, ahora, dias_var.get())
-    puesto = (listbox_puestos_global.get(listbox_puestos_global.curselection())
-              if listbox_puestos_global.curselection() else "No seleccionado")
-    tipo_contrato = (listbox_contrato_global.get(listbox_contrato_global.curselection())
-                     if listbox_contrato_global.curselection() else "No seleccionado")
-    departamento = (tree_departamentos_global.item(tree_departamentos_global.selection()[0])['text']
-                    if tree_departamentos_global.selection() else "No seleccionado")
+
+    if not listbox_puestos_global.curselection():
+        messagebox.showerror("Error", "Selecciona un puesto")
+        return
+    puesto = listbox_puestos_global.get(listbox_puestos_global.curselection())
+
+    if not listbox_contrato_global.curselection():
+        messagebox.showerror("Error", "Selecciona un tipo de contrato")
+        return
+    tipo_contrato = listbox_contrato_global.get(listbox_contrato_global.curselection())
+
+    if not tree_departamentos_global.selection():
+        messagebox.showerror("Error", "Selecciona un departamento")
+        return
+    departamento = tree_departamentos_global.item(tree_departamentos_global.selection()[0])['text']
+
     if clave not in trabajadores:
         trabajadores[clave] = {
             "jornada": jornada, "retardos": 0, "faltas": 0,
@@ -165,21 +177,29 @@ def registrar_entrada():
             "dias": dias_var.get(), "tipo_contrato": tipo_contrato,
             "puesto": puesto, "departamento": departamento
         })
+
     if estado == "Retardo":
         trabajadores[clave]["retardos"] += 1
         if trabajadores[clave]["retardos"] >= RETARDOS_PARA_FALTA:
             trabajadores[clave]["faltas"] += 1
             estado = "Falta"
             trabajadores[clave]["retardos"] = 0
+
     trabajadores[clave]["entrada"] = ahora.strftime("%I:%M %p")
     trabajadores[clave]["estado"] = estado
-    resumen = (f"[ENTRADA] {nombre} ({numero}) - Jornada: {jornada}, "
-               f"Días: {dias_var.get()}, Entrada: {trabajadores[clave]['entrada']}, "
-               f"Estado: {estado}, CURP: {entry_curp.get()}, Área: {area_var.get()}\n")
+
+    resumen = (
+        f"[ENTRADA] {nombre} ({numero}) - Jornada: {jornada}, "
+        f"Días: {dias_var.get()}, Entrada: {trabajadores[clave]['entrada']}, "
+        f"Estado: {estado}, CURP: {entry_curp.get()}, Área: {area_var.get()}, "
+        f"Departamento: {departamento}, Puesto: {puesto}, Tipo de contrato: {tipo_contrato}\n"
+    )
     text_area.insert(tk.END, resumen)
+
     guardar_registro(nombre, numero)
     guardar_datos_json()
     limpiar_campos()
+
 
 def registrar_salida():
     nombre = entry_nombre.get()
@@ -188,15 +208,25 @@ def registrar_salida():
     if clave not in trabajadores:
         messagebox.showerror("Error", "No se encontró registro de entrada.")
         return
+
     trabajadores[clave]["salida"] = datetime.now().strftime("%I:%M %p")
+
+    departamento = trabajadores[clave].get("departamento", "No seleccionado")
+    puesto = trabajadores[clave].get("puesto", "No seleccionado")
+    tipo_contrato = trabajadores[clave].get("tipo_contrato", "No seleccionado")
+
     resumen = (f"[SALIDA] {nombre} ({numero}) - Salida: {trabajadores[clave]['salida']}, "
                f"Estado Final: {trabajadores[clave]['estado']}, "
                f"CURP: {trabajadores[clave].get('curp','N/A')}, "
-               f"Área: {trabajadores[clave].get('area','N/A')}\n")
+               f"Área: {trabajadores[clave].get('area','N/A')}\n"
+               f"Departamento: {departamento}, Puesto: {puesto}, Tipo de contrato: {tipo_contrato}\n\n")
     text_area.insert(tk.END, resumen)
+    text_area.see(tk.END)
+
     guardar_registro(nombre, numero)
     guardar_datos_json()
     limpiar_campos()
+
 
 def registrar_asistencia_ext():
     nombre = entry_nombre_control.get()
@@ -272,6 +302,7 @@ def registrar_vacaciones_ext():
     guardar_datos_json()
     limpiar_campos_vacacion()
 
+
 def crear_pestañas_principales():
     global entry_nombre, entry_numero, entry_celular, entry_domicilio
     global entry_edad, entry_nss, entry_curp
@@ -317,58 +348,38 @@ def crear_pestañas_principales():
 
     ttk.Button(tab1, text="Registrar Entrada", command=registrar_entrada).grid(row=len(labels), column=0, pady=10)
     ttk.Button(tab1, text="Registrar Salida", command=registrar_salida).grid(row=len(labels), column=1, pady=10)
+    # … aquí incluirías todo el setup del primer código para pestaña de datos básicos …
 
-    tab3 = ttk.Frame(notebook)
-    notebook.add(tab3, text="Departamentos")
-    tree_departamentos_global = ttk.Treeview(tab3)
-    tree_departamentos_global.heading("#0", text="Departamentos del Hospital", anchor="w")
-    datos_departamentos = {
-        "Clínicos / Asistenciales": [
-            "Medicina Interna", "Cirugía General", "Ginecología y Obstetricia", "Anestesiología",
-            "Cuidados Intensivos (UCI)", "Psiquiatría", "Oncología", "Neurología",
-            "Rehabilitación", "Diagnóstico por imagen", "Laboratorio clínico"
-        ],
-        "Enfermería": [
-            "Enfermería general", "Enfermería especializada (UCI, quirófano, pediatría)", "Supervisión de enfermería"
-        ],
-        "Administrativos / Gestión": [
-            "Dirección general", "Recursos humanos", "Finanzas / Contabilidad",
-            "Compras y logística", "Admisiones y archivo clínico", "Sistemas / Informática"
-        ],
-        "Apoyo y servicios generales": [
-            "Mantenimiento", "Limpieza", "Cocina y nutrición", "Lavandería", "Seguridad", "Transporte interno"
-        ]
-    }
-    for cat, subs in datos_departamentos.items():
-        parent = tree_departamentos_global.insert("", "end", text=cat)
-        for sub in subs:
-            tree_departamentos_global.insert(parent, "end", text=sub)
-    tree_departamentos_global.pack(fill="both", expand=True, padx=10, pady=10)
 
     tab4 = ttk.Frame(notebook)
-    notebook.add(tab4, text="Puesto en el hospital")
-    listbox_puestos_global = tk.Listbox(tab4)
-    puestos = [
-        "Médico/a general", "Especialista", "Residente", "Médico de urgencias", "Anestesiólogo", "Cirujano/a",
-        "Enfermero/a", "Auxiliar de enfermería", "Supervisor/a de enfermería",
-        "Técnico de laboratorio", "Técnico de radiología", "Técnico en anatomía", "Técnico de farmacia",
-        "Recepcionista", "Auxiliar administrativo", "Contable", "Responsable de RRHH", "Director financiero", "Jefe de compras",
-        "Celador", "Personal de limpieza", "Cocineros", "Personal de mantenimiento", "Personal de seguridad"
-    ]
+    notebook.add(tab4, text="Puesto")
+    frame_puesto = ttk.LabelFrame(tab4, text="Puesto")
+    frame_puesto.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_puestos_global = tk.Listbox(frame_puesto, height=5, exportselection=False)
+    puestos = ["Gerente", "Analista", "Operativo", "Soporte"]
     for p in puestos:
         listbox_puestos_global.insert(tk.END, p)
-    listbox_puestos_global.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_puestos_global.pack(fill="both", expand=True)
 
     tab5 = ttk.Frame(notebook)
     notebook.add(tab5, text="Tipo de contrato")
-    listbox_contrato_global = tk.Listbox(tab5)
-    contratos = [
-        "Contrato indefinido", "Contrato temporal", "Contrato interino",
-        "Contrato en formación / residencia", "Contrato por guardias", "Contrato externo"
-    ]
+    frame_contrato = ttk.LabelFrame(tab5, text="Tipo de Contrato")
+    frame_contrato.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_contrato_global = tk.Listbox(frame_contrato, height=3, exportselection=False)
+    contratos = ["Tiempo completo", "Medio tiempo", "Contrato temporal"]
     for c in contratos:
         listbox_contrato_global.insert(tk.END, c)
-    listbox_contrato_global.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_contrato_global.pack(fill="both", expand=True)
+
+    tab3 = ttk.Frame(notebook)
+    notebook.add(tab3, text="Departamento")
+    frame_departamento = ttk.LabelFrame(tab3, text="Departamento")
+    frame_departamento.pack(fill="both", expand=True, padx=10, pady=10)
+    tree_departamentos_global = ttk.Treeview(frame_departamento)
+    departamentos = ["Ventas", "Compras", "Recursos Humanos", "TI"]
+    for d in departamentos:
+        tree_departamentos_global.insert("", "end", text=d)
+    tree_departamentos_global.pack(fill="both", expand=True)
 
     tab6 = ttk.Frame(notebook)
     notebook.add(tab6, text="Asistencias Ext.")
