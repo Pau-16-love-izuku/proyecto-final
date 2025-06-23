@@ -69,3 +69,73 @@ nuevo = TrabajadorHospital(
     area, jornada, dias, tipo_contrato, puesto, departamento
 )
 trabajadores[(nombre.lower(), numero)] = nuevo.to_dict()
+
+
+
+
+###---------------------------------------------------YA JUNTAS--------------------------------------------------------------###
+
+# Clase padre: maneja el historial y datos
+class Trabajador:
+    def __init__(self):
+        self.historial = []
+
+    def guardar(self, datos):
+        self.historial.append(datos)
+
+    def obtener_historial(self):
+        return self.historial
+
+# Clase hija: interfaz gráfica
+class InterfazTrabajador(tk.Tk):
+    def __init__(self, gestor: Trabajador):
+        super().__init__()
+        self.title("Gestión de Trabajadores")
+        self.geometry("600x500")
+        self.gestor = gestor
+
+        self.tabs = ttk.Notebook(self)
+        self.tabs.pack(expand=1, fill="both")
+
+        self.tab_datos = ttk.Frame(self.tabs)
+        self.tab_historial = ttk.Frame(self.tabs)
+
+        self.tabs.add(self.tab_datos, text="Datos")
+        self.tabs.add(self.tab_historial, text="Historial")
+
+        self.crear_widgets()
+        self.text_historial = tk.Text(self.tab_historial)
+        self.text_historial.pack(expand=1, fill="both")
+
+    def crear_widgets(self):
+        self.entry_nombre = ttk.Entry(self.tab_datos)
+        self.entry_nombre.grid(row=0, column=1)
+        ttk.Label(self.tab_datos, text="Nombre").grid(row=0, column=0)
+
+        self.entry_puesto = ttk.Entry(self.tab_datos)
+        self.entry_puesto.grid(row=1, column=1)
+        ttk.Label(self.tab_datos, text="Puesto").grid(row=1, column=0)
+
+        self.entry_departamento = ttk.Entry(self.tab_datos)
+        self.entry_departamento.grid(row=2, column=1)
+        ttk.Label(self.tab_datos, text="Departamento").grid(row=2, column=0)
+
+        btn = ttk.Button(self.tab_datos, text="Guardar", command=self.guardar_trabajador)
+        btn.grid(row=3, column=0, columnspan=2)
+
+    def guardar_trabajador(self):
+        datos = {
+            "nombre": self.entry_nombre.get(),
+            "puesto": self.entry_puesto.get(),
+            "departamento": self.entry_departamento.get()
+        }
+        self.gestor.guardar(datos)
+        self.actualizar_historial()
+
+    def actualizar_historial(self):
+        self.text_historial.delete("1.0", tk.END)
+        for i, d in enumerate(self.gestor.obtener_historial(), 1):
+            self.text_historial.insert(tk.END, f"{i}. {d['nombre']} - {d['puesto']} - {d['departamento']}\n")
+
+
+
