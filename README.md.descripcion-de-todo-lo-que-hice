@@ -18,3 +18,82 @@
 
 
 # INTENTO 2
+#codigo de prueba 2: (descripcion e intento)
+#ya funciono pero le falta la entrada para agregar mas datos, y la parte que registra al trabajador aun no funciona bien :(
+
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+import sqlite3
+from datetime import datetime
+class Hospitalcontrol:
+    def __init__(self, root):  
+        self.root = root
+        self.root.title("Control de Asistencia - Hospital")
+        self.create_widgets()
+        self.create_db()
+
+    def create_widgets(self):
+        self.entrada_button = tk.Button(self.root, text="Registrar Entrada", command=self.registrar_entrada)
+        self.entrada_button.pack(pady=5)
+
+        self.salida_button = tk.Button(self.root, text="Registrar Salida", command=self.registrar_salida)
+        self.salida_button.pack(pady=5)
+
+        self.reporte_button = tk.Button(self.root, text="Generar Reporte", command=self.generar_reporte)
+        self.reporte_button.pack(pady=5)
+
+    def create_db(self):
+        self.conn = sqlite3.connect('database.db')
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS asistencia (
+                                id INTEGER PRIMARY KEY,
+                                nombre TEXT,
+                                turno TEXT,
+                                entrada DATETIME,
+                                salida DATETIME)''')
+        self.conn.commit()
+
+    def registrar_entrada(self):
+        nombre = simpledialog.askstring("Entrada", "Nombre del trabajador:")
+        turno = simpledialog.askstring("Entrada", "Turno (M/V/N):").upper() if nombre else None
+        if nombre and turno in ['M', 'V', 'N']:
+            entrada = datetime.now()
+            self.cursor.execute("INSERT INTO asistencia (nombre, turno, entrada) VALUES (?, ?, ?)",
+                                (nombre, turno, entrada))
+            self.conn.commit()
+            messagebox.showinfo("Éxito", f"Entrada registrada para {nombre} en turno {turno}.")
+        else:
+            messagebox.showerror("Error", "Debe ingresar un nombre y un turno válido (M, V, N).")
+
+    def registrar_salida(self):
+        nombre = simpledialog.askstring("Salida", "Nombre del trabajador:")
+        if nombre:
+            salida = datetime.now()
+            self.cursor.execute("UPDATE asistencia SET salida = ? WHERE nombre = ? AND salida IS NULL",
+                                (salida, nombre))
+            self.conn.commit()
+            messagebox.showinfo("Éxito", f"Salida registrada para {nombre}.")
+        else:
+            messagebox.showerror("Error", "Debe ingresar un nombre.")
+
+    def generar_reporte_trabajador(self):
+        self.cursor.execute("SELECT nombre, turno, entrada, salida FROM asistencia")
+        registros = self.cursor.fetchall()
+        reporte = "Reporte de Asistencia:\n\n"
+        for nombre, turno, entrada, salida in registros:
+            entrada = datetime.strptime(entrada, '%Y-%m-%d %H:%M:%S')
+            salida_dt = datetime.strptime(salida, '%Y-%m-%d %H:%M:%S') if salida else None
+            horas_trabajadas = (salida_dt - entrada).total_seconds() / 3600 if salida_dt else 0
+            reporte += f"{nombre} - Turno {turno} - Entrada: {entrada.strftime('%H:%M:%S')} - "
+            reporte += f"Salida: {salida_dt.strftime('%H:%M:%S') if salida_dt else 'Pendiente'} - "
+            reporte += f"Horas: {horas_trabajadas:.2f}\n"
+
+        messagebox.showinfo("Reporte de Asistencia", reporte)
+
+if __name__ == "__main__":  
+    root = tk.Tk()
+    app = HospitalApp(root)
+    root.mainloop()
+
+
+# INTENTO 3:
