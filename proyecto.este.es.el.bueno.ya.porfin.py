@@ -1,0 +1,616 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from datetime import datetime, timedelta
+import json, os
+
+archivo_datos = "trabajadores.json"
+if os.path.exists(archivo_datos):
+    with open(archivo_datos, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    trabajadores = {tuple(k.split("||")): v for k, v in data.items()}
+else:
+    trabajadores = {}
+
+LIMITE_POR_TURNO = 2
+RETARDOS_PARA_FALTA = 3
+intentos = 0
+
+def guardar_datos_json():
+    serial = {"||".join(k): v for k, v in trabajadores.items()}
+    with open(archivo_datos, "w", encoding="utf-8") as f:
+        json.dump(serial, f, indent=4, ensure_ascii=False)
+
+def actualizar_listado(filtro=""):
+    filtro = filtro.lower()
+    tree_listado.delete(*tree_listado.get_children())
+
+    for clave, t in trabajadores.items():
+        nombre = t.get("nombre", "")
+        numero = t.get("numero", "")
+        texto = f"{nombre.lower()} {numero.lower()}"
+
+        if filtro in texto:
+            tree_listado.insert("", "end", values=(
+                nombre,
+                numero,
+                t.get("genero", ""),
+                t.get("edad", ""),
+                t.get("area", ""),
+                t.get("puesto", ""),
+                t.get("turno", ""),
+                t.get("jornada", ""),
+                t.get("dias", ""),
+                t.get("entrada", ""),
+                t.get("salida", ""),
+                t.get("estado", ""),
+                t.get("retardos", 0),
+                t.get("faltas", 0),
+                len(t.get("vacaciones", []))
+            ))
+
+
+##########
+
+def cargar_historial():
+    text_area.delete(1.0, tk.END)  # Limpia el historial actual
+    for clave, t in trabajadores.items():
+        nombre = t.get("nombre", "N/A")
+        numero = t.get("numero", "N/A")
+        entrada = t.get("entrada", "N/A")
+        salida = t.get("salida", "N/A")
+        estado = t.get("estado", "N/A")
+        resumen = (
+            f"[REGISTRO] {nombre} ({numero})\n"
+            f"  Jornada: {t.get('jornada','')} | Días: {t.get('dias','')} | Entrada: {entrada} | Salida: {salida}\n"
+            f"  Estado: {estado} | Retardos: {t.get('retardos',0)} | Faltas: {t.get('faltas',0)}\n"
+            f"  CURP: {t.get('curp','')} | Área: {t.get('area','')} | Departamento: {t.get('departamento','')} | Puesto: {t.get('puesto','')}\n"
+            f"  Tipo de contrato: {t.get('tipo_contrato','')}\n\n"
+        )
+        text_area.insert(tk.END, resumen)
+
+
+
+
+##########
+
+
+def mostrar_ventana_confirmacion(nombre, numero):
+    ventana_info = tk.Toplevel()
+    ventana_info.title("Registro exitoso")
+    ventana_info.geometry("300x150")
+    ventana_info.grab_set()  
+
+    ttk.Label(ventana_info, text="¡Trabajador Registrado!", font=("Arial", 12, "bold")).pack(pady=10)
+    ttk.Label(ventana_info, text=f"Nombre: {nombre}").pack()
+    ttk.Label(ventana_info, text=f"Número de control: {numero}").pack()
+
+    def cerrar_y_limpiar():
+        ventana_info.destroy()
+        limpiar_campos()
+
+    ttk.Button(ventana_info, text="Aceptar", command=cerrar_y_limpiar).pack(pady=10)
+
+
+def registrar_entrada():
+    text_area.delete(1.0, tk.END)
+    nombre = entry_nombre.get()
+    numero = entry_numero.get()
+
+    if not validar_datos(nombre, numero,
+                         entry_celular.get(), entry_domicilio.get(),
+                         entry_edad.get(), genero_var.get(),
+                         entry_nss.get(), entry_curp.get()):
+        return
+
+    jornada = jornada_var.get()
+    ahora = datetime.now()
+
+    clave = (nombre.strip().lower(), numero.strip())
+
+
+    print("DEBUG -> clave usada:", clave)
+
+
+    estado = obtener_estado(jornada, ahora, dias_var.get())
+
+    if not listbox_puestos_global.curselection():
+        messagebox.showerror("Error", "Selecciona un puesto")
+        return
+    puesto = listbox_puestos_global.get(listbox_puestos_global.curselection())
+
+    if not listbox_contrato_global.curselection():
+        messagebox.showerror("Error", "Selecciona un tipo de contrato")
+        return
+    tipo_contrato = listbox_contrato_global.get(listbox_contrato_global.curselection())
+
+    if not tree_departamentos_global.selection():
+        messagebox.showerror("Error", "Selecciona un departamento")
+        return
+    departamento = tree_departamentos_global.item(tree_departamentos_global.selection()[0])['text']
+
+    if clave not in trabajadores:
+        trabajadores[clave] = {
+            "jornada": jornada,
+            "turno": jornada,
+            "retardos": 0,
+            "faltas": 0,
+            "celular": entry_celular.get(),
+            "domicilio": entry_domicilio.get(),
+            "edad": entry_edad.get(),
+            "genero": genero_var.get(),
+            "nss": entry_nss.get(),
+            "curp": entry_curp.get(),
+            "area": area_var.get(),
+            "dias": dias_var.get(),
+            "tipo_contrato": tipo_contrato,
+            "puesto": puesto,
+            "departamento": departamento
+        }
+
+    else:
+        trabajadores[clave].update({
+            "jornada": jornada,
+            "turno": jornada,
+            "domicilio": entry_domicilio.get(),
+            "edad": entry_edad.get(),
+            "genero": genero_var.get(),
+            "nss": entry_nss.get(),
+            "curp": entry_curp.get(),
+            "area": area_var.get(),
+            "dias": dias_var.get(),
+            "tipo_contrato": tipo_contrato,
+            "puesto": puesto,
+            "departamento": departamento
+        })
+
+
+    # 💥 Esta es la línea clave que arregla el listado:
+    trabajadores[clave]["nombre"] = nombre
+    trabajadores[clave]["numero"] = numero
+
+    if estado == "Retardo":
+        trabajadores[clave]["retardos"] += 1
+        if trabajadores[clave]["retardos"] >= RETARDOS_PARA_FALTA:
+            trabajadores[clave]["faltas"] += 1
+            estado = "Falta"
+            trabajadores[clave]["retardos"] = 0
+
+    trabajadores[clave]["entrada"] = ahora.strftime("%I:%M %p")
+    trabajadores[clave]["estado"] = estado
+
+    print("DEBUG -> datos guardados:", trabajadores[clave])
+
+
+    resumen = (
+        f"[ENTRADA] {nombre} ({numero}) - Jornada: {jornada}, "
+        f"Días: {dias_var.get()}, Entrada: {trabajadores[clave]['entrada']}, "
+        f"Estado: {estado}, CURP: {entry_curp.get()}, Área: {area_var.get()}, "
+        f"Departamento: {departamento}, Puesto: {puesto}, Tipo de contrato: {tipo_contrato}\n"
+    )
+    text_area.insert(tk.END, resumen)
+    text_area.see(tk.END)
+
+    guardar_registro(nombre, numero)
+    guardar_datos_json()
+
+    actualizar_listado("")  # Sin filtro, muestra todo
+    
+    limpiar_campos()
+    mostrar_ventana_confirmacion(nombre, numero)
+
+
+# ... el resto de funciones sin cambios ...
+
+# En crear_pestañas_principales(): asegúrate de definir tree_listado, entry_filtrar, text_area, etc.
+# (todo se mantiene igual)
+
+def guardar_registro(nombre, numero):
+    clave = (nombre, numero)
+    if clave not in trabajadores:
+        return
+    t = trabajadores[clave]
+    with open("registro_trabajadores.txt", "a", encoding="utf-8") as f:
+        f.write(
+            f"{nombre} ({numero}) | Jornada: {t.get('jornada','N/A')} | Entrada: {t.get('entrada','N/A')} | "
+            f"Salida: {t.get('salida','N/A')} | Estado: {t.get('estado','N/A')} | "
+            f"Retardos: {t.get('retardos',0)} | Faltas: {t.get('faltas',0)} | "
+            f"Celular: {t.get('celular','N/A')} | Domicilio: {t.get('domicilio','N/A')} | "
+            f"Edad: {t.get('edad','N/A')} | Género: {t.get('genero','N/A')} | NSS: {t.get('nss','N/A')} | "
+            f"CURP: {t.get('curp','N/A')} | Área: {t.get('area','N/A')} | Días: {t.get('dias','N/A')} | "
+            f"Departamento: {t.get('departamento','N/A')} | Puesto: {t.get('puesto','N/A')} | "
+            f"Tipo de Contrato: {t.get('tipo_contrato','N/A')}\n"
+        )
+
+def rango_fechas(inicio, fin):
+    inicio = datetime.strptime(inicio, "%Y-%m-%d")
+    fin = datetime.strptime(fin, "%Y-%m-%d")
+    return [(inicio + timedelta(days=i)).strftime("%Y-%m-%d")
+            for i in range((fin - inicio).days + 1)]
+
+def validar_vacaciones(turno, fechas):
+    conteo = {f: 0 for f in fechas}
+    for clave, t in trabajadores.items():
+        if t.get("turno") == turno:
+            for f in t.get("vacaciones", []):
+                if f in conteo:
+                    conteo[f] += 1
+                    if conteo[f] >= LIMITE_POR_TURNO:
+                        return False, f
+    return True, None
+
+def obtener_estado(jornada, hora_actual, dias):
+    if dias in ["Lunes a Viernes", "Lun, Mar, Vie", "Mié, Jue, Sáb"]:
+        horarios = {
+            "Matutina": datetime.strptime("07:00", "%H:%M").time(),
+            "Vespertina": datetime.strptime("12:00", "%H:%M").time(),
+            "Nocturna": datetime.strptime("17:00", "%H:%M").time()
+        }
+    elif dias == "Sábado y Domingo":
+        horarios = {
+            "Matutina": datetime.strptime("08:00", "%H:%M").time(),
+            "Vespertina": datetime.strptime("13:00", "%H:%M").time(),
+            "Nocturna": datetime.strptime("18:00", "%H:%M").time()
+        }
+    else:
+        return "Jornada inválida"
+    inicio = horarios.get(jornada)
+    if not inicio:
+        return "Jornada inválida"
+    diff = (datetime.combine(datetime.today(), hora_actual.time()) -
+            datetime.combine(datetime.today(), inicio)).total_seconds() / 60
+    if diff > 10:
+        return "Retardo"
+    elif diff >= 0:
+        return "Puntual"
+    else:
+        return "Antes de tiempo"
+
+def validar_datos(nombre, numero, celular, domicilio, edad, genero, nss, curp):
+    if not all([nombre, numero, celular, domicilio, edad, genero, nss, curp]):
+        messagebox.showerror("Error", "Todos los campos deben estar completos.")
+        return False
+    if not edad.isdigit() or not (18 <= int(edad) <= 99):
+        messagebox.showerror("Error", "Edad inválida. Debe ser 18‑99.")
+        return False
+    if not (celular.isdigit() and len(celular) == 10):
+        messagebox.showerror("Error", "Teléfono inválido (10 dígitos).")
+        return False
+    if not (nss.isdigit() and len(nss) == 11):
+        messagebox.showerror("Error", "NSS inválido (11 dígitos).")
+        return False
+    if not (len(curp) == 18 and curp.isalnum()):
+        messagebox.showerror("Error", "CURP inválido (18 alfanum.).")
+        return False
+    return True
+
+def limpiar_campos():
+    for entry in [entry_nombre, entry_numero, entry_celular,
+                  entry_domicilio, entry_edad, entry_nss, entry_curp]:
+        entry.delete(0, tk.END)
+    jornada_var.set("Matutina")
+    genero_var.set("Femenino")
+    area_var.set("General")
+    dias_var.set("Lunes a Viernes")
+
+def limpiar_campos_asistencia():
+    entry_nombre_control.delete(0, tk.END)
+    entry_numero_control.delete(0, tk.END)
+    entry_hora_llegada.delete(0, tk.END)
+
+def limpiar_campos_vacacion():
+    entry_vac_nombre.delete(0, tk.END)
+    entry_vac_numero.delete(0, tk.END)
+    entry_vac_inicio.delete(0, tk.END)
+    entry_vac_fin.delete(0, tk.END)
+
+
+    entry_nombre.focus_set()  # Pone el cursor de nuevo en el primer campo
+
+def registrar_salida():
+    nombre = entry_nombre.get()
+    numero = entry_numero.get()
+    clave = (nombre, numero)
+    if clave not in trabajadores:
+        messagebox.showerror("Error", "No se encontró registro de entrada.")
+        return
+
+    trabajadores[clave]["salida"] = datetime.now().strftime("%I:%M %p")
+
+    departamento = trabajadores[clave].get("departamento", "No seleccionado")
+    puesto = trabajadores[clave].get("puesto", "No seleccionado")
+    tipo_contrato = trabajadores[clave].get("tipo_contrato", "No seleccionado")
+
+    resumen = (f"[SALIDA] {nombre} ({numero}) - Salida: {trabajadores[clave]['salida']}, "
+               f"Estado Final: {trabajadores[clave]['estado']}, "
+               f"CURP: {trabajadores[clave].get('curp','N/A')}, "
+               f"Área: {trabajadores[clave].get('area','N/A')}\n"
+               f"Departamento: {departamento}, Puesto: {puesto}, Tipo de contrato: {tipo_contrato}\n\n")
+    text_area.insert(tk.END, resumen)
+    text_area.see(tk.END)
+
+    guardar_registro(nombre, numero)
+    guardar_datos_json()
+    actualizar_listado(entry_filtrar.get())
+    limpiar_campos()
+
+
+def registrar_asistencia_ext():
+    nombre = entry_nombre_control.get()
+    numero = entry_numero_control.get()
+    clave = (nombre, numero)
+    if clave not in trabajadores:
+        messagebox.showerror("Error", "Trabajador no encontrado.")
+        return
+
+    llegada_str = entry_hora_llegada.get().strip()
+    llegada_str = llegada_str.upper()  
+
+    formatos_validos = ["%I:%M %p", "%H:%M"]
+    llegada = None
+
+    for formato in formatos_validos:
+        try:
+            llegada = datetime.strptime(llegada_str, formato)
+            break
+        except ValueError:
+            continue
+
+    if llegada is None:
+        messagebox.showerror("Formato inválido", "Formato aceptado: HH:MM AM/PM o 24h (ej. 07:00 AM, 13:30)")
+        return
+
+    hoy = datetime.now().strftime("%Y-%m-%d")
+    t = trabajadores[clave]
+    if hoy in t.get("vacaciones", []):
+        messagebox.showinfo("Vacaciones", "Está de vacaciones hoy.")
+        return
+
+    estado = obtener_estado(t["jornada"], llegada, t["dias"])
+
+    if estado == "Retardo":
+        t["retardos"] = t.get("retardos", 0) + 1
+        if t["retardos"] >= RETARDOS_PARA_FALTA:
+            t["faltas"] = t.get("faltas", 0) + 1
+            t["retardos"] = 0
+            estado = "Falta"
+
+    t.setdefault("asistencias_ext", []).append({"fecha": hoy, "tipo": estado})
+    t["entrada"] = llegada.strftime("%I:%M %p")
+    t["estado"] = estado
+
+    text_area.insert(tk.END, f"[EXT-Asistencia] {nombre} ({numero}) → {hoy} {t['entrada']} | {estado}\n")
+
+    guardar_registro(nombre, numero)
+    guardar_datos_json()
+    actualizar_listado(entry_filtrar.get())
+    limpiar_campos_asistencia()
+
+
+def registrar_vacaciones_ext():
+    nombre = entry_vac_nombre.get()
+    numero = entry_vac_numero.get()
+    clave = (nombre, numero)
+    if clave not in trabajadores:
+        messagebox.showerror("Error", "Trabajador no encontrado.")
+        return
+    try:
+        fechas = rango_fechas(entry_vac_inicio.get(), entry_vac_fin.get())
+    except:
+        messagebox.showerror("Error", "Formato AAAA-MM-DD.")
+        return
+    t = trabajadores[clave]
+    ok, conflicto = validar_vacaciones(t.get("turno"), fechas)
+    if not ok:
+        messagebox.showwarning("Conflicto", f"Turno saturado en {conflicto}")
+        return
+    t.setdefault("vacaciones", [])
+    t["vacaciones"] = list(set(t["vacaciones"] + fechas))
+    messagebox.showinfo("Éxito", "Vacaciones registradas.")
+
+    guardar_registro(nombre, numero)
+    guardar_datos_json()
+    actualizar_listado(entry_filtrar.get())
+    limpiar_campos_vacacion()
+
+
+def crear_pestañas_principales():
+    global entry_nombre, entry_numero, entry_celular, entry_domicilio
+    global entry_edad, entry_nss, entry_curp
+    global jornada_var, genero_var, area_var, dias_var
+    global listbox_puestos_global, listbox_contrato_global, tree_departamentos_global
+    global entry_nombre_control, entry_numero_control, entry_hora_llegada
+    global entry_vac_nombre, entry_vac_numero, entry_vac_inicio, entry_vac_fin
+    global text_area
+    global tree_listado, entry_filtrar
+
+
+    ventana = tk.Tk()
+    ventana.title("Registro de Trabajadores Hospital Osamu")
+    notebook = ttk.Notebook(ventana)
+    notebook.pack(fill="both", expand=True)
+
+
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Datos del Trabajador")
+    labels = ["Nombre:", "Número de Control:", "Celular:", "Domicilio:", "Edad:",
+              "Género:", "NSS:", "CURP:", "Área:", "Jornada:", "Días de trabajo:"]
+    entries = {}
+    for i, label in enumerate(labels):
+        ttk.Label(tab1, text=label).grid(row=i, column=0, sticky="e", pady=2)
+        if label in ["Género:", "Área:", "Jornada:", "Días de trabajo:"]:
+            var = tk.StringVar()
+            if label == "Género:": genero_var = var; var.set("Femenino"); opts = ["Femenino", "Masculino"]
+            elif label == "Área:": area_var = var; var.set("General"); opts = [
+                "Camillas","Consultorio","Cirujano","Doctor","Cardiología","Dermatología","Pediatría",
+                "Sala de Operaciones","Urgencias","General"]
+            elif label == "Jornada:": jornada_var = var; var.set("Matutina"); opts = ["Matutina","Vespertina","Nocturna"]
+            else: dias_var = var; var.set("Lunes a Viernes"); opts = ["Lunes a Viernes","Sábado y Domingo","Lun, Mar, Vie","Mié, Jue, Sáb"]
+            ttk.Combobox(tab1, textvariable=var, values=opts, state="readonly").grid(row=i, column=1)
+        else:
+            entry = ttk.Entry(tab1)
+            entry.grid(row=i, column=1)
+            entries[label] = entry
+
+    entry_nombre = entries["Nombre:"]
+    entry_numero = entries["Número de Control:"]
+    entry_celular = entries["Celular:"]
+    entry_domicilio = entries["Domicilio:"]
+    entry_edad = entries["Edad:"]
+    entry_nss = entries["NSS:"]
+    entry_curp = entries["CURP:"]
+
+    ttk.Button(tab1, text="Registrar Entrada", command=registrar_entrada).grid(row=len(labels), column=0, pady=10)
+    ttk.Button(tab1, text="Registrar Salida", command=registrar_salida).grid(row=len(labels), column=1, pady=10)
+
+    tab4 = ttk.Frame(notebook)
+    notebook.add(tab4, text="Puesto")
+    frame_puesto = ttk.LabelFrame(tab4, text="Puesto")
+    frame_puesto.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_puestos_global = tk.Listbox(frame_puesto, height=5, exportselection=False)
+    puestos = ["Gerente", "Analista", "Operativo", "Soporte"]
+    for p in puestos:
+        listbox_puestos_global.insert(tk.END, p)
+    listbox_puestos_global.pack(fill="both", expand=True)
+
+    tab5 = ttk.Frame(notebook)
+    notebook.add(tab5, text="Tipo de contrato")
+    frame_contrato = ttk.LabelFrame(tab5, text="Tipo de Contrato")
+    frame_contrato.pack(fill="both", expand=True, padx=10, pady=10)
+    listbox_contrato_global = tk.Listbox(frame_contrato, height=3, exportselection=False)
+    contratos = ["Tiempo completo", "Medio tiempo", "Contrato temporal"]
+    for c in contratos:
+
+        listbox_contrato_global.insert(tk.END, c)
+    listbox_contrato_global.pack(fill="both", expand=True)
+
+    tab3 = ttk.Frame(notebook)
+    notebook.add(tab3, text="Departamento")
+    frame_departamento = ttk.LabelFrame(tab3, text="Departamento")
+    frame_departamento.pack(fill="both", expand=True, padx=10, pady=10)
+    tree_departamentos_global = ttk.Treeview(frame_departamento)
+    departamentos = ["Ventas", "Compras", "Recursos Humanos", "TI"]
+    
+    for d in departamentos:
+        tree_departamentos_global.insert("", "end", text=d)
+    tree_departamentos_global.pack(fill="both", expand=True)
+
+
+    tab6 = ttk.Frame(notebook)
+    notebook.add(tab6, text="Asistencias Ext.")
+
+    ttk.Label(tab6, text="Nombre:").grid(row=0, column=0)
+    entry_nombre_control = ttk.Entry(tab6); entry_nombre_control.grid(row=0, column=1)
+    ttk.Label(tab6, text="Número control:").grid(row=1, column=0)
+    entry_numero_control = ttk.Entry(tab6); entry_numero_control.grid(row=1, column=1)
+    ttk.Label(tab6, text="Hora llegada (HH:MM):").grid(row=2, column=0)
+    entry_hora_llegada = ttk.Entry(tab6); entry_hora_llegada.grid(row=2, column=1)
+    ttk.Button(tab6, text="Registrar asistencia", command=registrar_asistencia_ext).grid(row=3, column=0, columnspan=2, pady=10)
+
+    tab7 = ttk.Frame(notebook)
+    notebook.add(tab7, text="Vacaciones")
+
+    ttk.Label(tab7, text="Nombre:").grid(row=0, column=0)
+    entry_vac_nombre = ttk.Entry(tab7); entry_vac_nombre.grid(row=0, column=1)
+    ttk.Label(tab7, text="Número control:").grid(row=1, column=0)
+    entry_vac_numero = ttk.Entry(tab7); entry_vac_numero.grid(row=1, column=1)
+    ttk.Label(tab7, text="Inicio AAAA-MM-DD:").grid(row=2, column=0)
+    entry_vac_inicio = ttk.Entry(tab7); entry_vac_inicio.grid(row=2, column=1)
+    ttk.Label(tab7, text="Fin AAAA-MM-DD:").grid(row=3, column=0)
+    entry_vac_fin = ttk.Entry(tab7); entry_vac_fin.grid(row=3, column=1)
+    ttk.Button(tab7, text="Registrar vacaciones", command=registrar_vacaciones_ext).grid(row=4, column=0, columnspan=2, pady=10)
+
+
+    def actualizar_nombre_vac(*args):
+        num = entry_vac_numero.get().strip()
+        nombre = ""
+        for (n, numk), v in trabajadores.items():
+            if numk == num:
+                nombre = n; break
+        entry_vac_nombre.delete(0, tk.END)
+        entry_vac_nombre.insert(0, nombre)
+    entry_vac_numero.bind("<KeyRelease>", actualizar_nombre_vac)
+    entry_vac_numero.bind("<FocusOut>", actualizar_nombre_vac)
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Historial")
+    text_area = tk.Text(tab2, height=20, width=100)
+    text_area.pack(padx=10, pady=10)
+
+
+    tab_listado = ttk.Frame(notebook)
+    notebook.add(tab_listado, text="Listado")
+
+    filtro_frame = ttk.Frame(tab_listado)
+    filtro_frame.pack(fill="x", padx=10, pady=5)
+    ttk.Label(filtro_frame, text="Buscar:").pack(side="left")
+
+    entry_filtrar = ttk.Entry(filtro_frame)
+    entry_filtrar.pack(side="left", padx=5, fill="x", expand=True)
+
+    columnas = (
+    "Nombre", "Número", "Género", "Edad", "Área", "Puesto", "Turno", "Jornada",
+    "Días", "Entrada", "Salida", "Estado", "Retardos", "Faltas", "Vacaciones"
+)
+
+
+    tree_listado = ttk.Treeview(tab_listado, columns=columnas, show="headings")
+    for col in columnas:
+        tree_listado.heading(col, text=col)
+        tree_listado.column(col, width=90)
+
+    tree_listado.pack(fill="both", expand=True, padx=10, pady=5)
+
+    entry_filtrar.bind("<KeyRelease>", lambda e: actualizar_listado(entry_filtrar.get()))
+
+    def al_cambiar_pestana(event):
+      idx = notebook.index(notebook.select())
+    pestaña = notebook.tab(idx, "text")
+    print("Cambiando a pestaña:", pestaña)
+
+    if pestaña == "Listado":
+        actualizar_listado("")
+    elif pestaña == "Historial":
+        cargar_historial()
+
+
+    notebook.bind("<<NotebookTabChanged>>", al_cambiar_pestana)
+
+    ventana.mainloop()
+
+
+def verificar_contrasena():
+    global intentos
+    if entry_contrasena.get() == "hospital":
+        login.destroy()
+        crear_pestañas_principales()
+    else:
+        intentos += 1
+        if intentos >= 3:
+            messagebox.showerror("Acceso denegado", "Demasiados intentos")
+            login.destroy()
+        else:
+            messagebox.showerror("Error", "Contraseña incorrecta")
+
+def abrir_login():
+    global login, entry_contrasena
+    bienvenida.destroy()
+    login = tk.Tk()
+    login.title("Verificación de contraseña")
+    login.geometry("400x250")
+    login.config(bg="lightpink")
+    ttk.Label(login, text="Ingresa la contraseña:").pack(pady=10)
+    entry_contrasena = ttk.Entry(login, show="*"); entry_contrasena.pack()
+    ttk.Label(login, text='(la contraseña es "hospital")', foreground="blue").pack(pady=5)
+    ttk.Button(login, text="Entrar", command=verificar_contrasena).pack(pady=10)
+    login.mainloop()
+
+bienvenida = tk.Tk()
+bienvenida.title("Bienvenido al hospital Osamu 💖")
+bienvenida.geometry("600x300")
+bienvenida.config(bg="lightblue")
+ttk.Label(bienvenida, text="Bienvenido al sistema de registro del hospital Osamu", font=("Times New Roman", 16)).pack(pady=20)
+ttk.Button(bienvenida, text="Iniciar sesión", command=abrir_login).pack(pady=30)
+
+bienvenida.mainloop()
+
+
