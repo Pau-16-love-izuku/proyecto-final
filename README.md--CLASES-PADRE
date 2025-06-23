@@ -1,3 +1,5 @@
+###------------------------------------------CLASE PADRE-------------------------------####
+
 class TrabajadorBase:
     def __init__(self, nombre, numero, celular, domicilio, edad, genero, nss, curp):
         self.nombre = nombre
@@ -20,3 +22,50 @@ class TrabajadorBase:
             "nss": self.nss,
             "curp": self.curp
         }
+
+
+
+###-----------------------------------------------------------CLASE HIJA----------------------------------------------------------####
+
+class TrabajadorHospital(TrabajadorBase):
+    def __init__(self, nombre, numero, celular, domicilio, edad, genero, nss, curp,
+                 area, jornada, dias, tipo_contrato, puesto, departamento):
+        super().__init__(nombre, numero, celular, domicilio, edad, genero, nss, curp)
+        self.area = area
+        self.jornada = jornada
+        self.dias = dias
+        self.tipo_contrato = tipo_contrato
+        self.puesto = puesto
+        self.departamento = departamento
+        self.retardos = 0
+        self.faltas = 0
+        self.entrada = ""
+        self.salida = ""
+        self.estado = ""
+        self.vacaciones = []
+
+    def to_dict(self):
+        base = super().to_dict()
+        base.update({
+            "area": self.area,
+            "jornada": self.jornada,
+            "dias": self.dias,
+            "tipo_contrato": self.tipo_contrato,
+            "puesto": self.puesto,
+            "departamento": self.departamento,
+            "retardos": self.retardos,
+            "faltas": self.faltas,
+            "entrada": self.entrada,
+            "salida": self.salida,
+            "estado": self.estado,
+            "vacaciones": self.vacaciones
+        })
+        return base
+
+
+####------------------------------------PARA INTEGRACION DE CODIGO------------------------------------------------####
+nuevo = TrabajadorHospital(
+    nombre, numero, celular, domicilio, edad, genero, nss, curp,
+    area, jornada, dias, tipo_contrato, puesto, departamento
+)
+trabajadores[(nombre.lower(), numero)] = nuevo.to_dict()
