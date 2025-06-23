@@ -1,0 +1,22 @@
+class TrabajadorBase:
+    def __init__(self, nombre, numero, celular, domicilio, edad, genero, nss, curp):
+        self.nombre = nombre
+        self.numero = numero
+        self.celular = celular
+        self.domicilio = domicilio
+        self.edad = edad
+        self.genero = genero
+        self.nss = nss
+        self.curp = curp
+
+    def to_dict(self):
+        return {
+            "nombre": self.nombre,
+            "numero": self.numero,
+            "celular": self.celular,
+            "domicilio": self.domicilio,
+            "edad": self.edad,
+            "genero": self.genero,
+            "nss": self.nss,
+            "curp": self.curp
+        }
