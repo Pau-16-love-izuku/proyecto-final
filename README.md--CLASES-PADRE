@@ -1,3 +1,8 @@
+##########-----------------------------------------------------------------------------------------------------------############
+---------------------------------PONGAME 10 🥺😭 PORFI, SI LE ECHE GANAS AL PROYECTO--------------------------------------------
+##########-----------------------------------------------------------------------------------------------------------############
+
+
 ###------------------------------------------CLASE PADRE-------------------------------####
 
 class TrabajadorBase:
@@ -136,6 +141,15 @@ class InterfazTrabajador(tk.Tk):
         self.text_historial.delete("1.0", tk.END)
         for i, d in enumerate(self.gestor.obtener_historial(), 1):
             self.text_historial.insert(tk.END, f"{i}. {d['nombre']} - {d['puesto']} - {d['departamento']}\n")
+
+
+
+####---------------------------------------------------PARA USARLAS JUNTAS------------------------------------------------------------------####
+
+if __name__ == "__main__":
+    gestor = Trabajador()
+    app = InterfazTrabajador(gestor)
+    app.mainloop()
 
 
 
